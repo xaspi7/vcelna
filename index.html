@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Restaurace U Kaštanu</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f8f8f8;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    /* Header banner */
+    header {
+      position: relative;
+      text-align: center;
+      background-color: #333;
+    }
+
+    header img {
+      width: 100%;
+      height: auto;
+      max-height: 400px;
+      object-fit: cover;
+      filter: brightness(0.9);
+    }
+
+    header h1 {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      background-color: rgba(0, 0, 0, 0.6);
+      padding: 10px 20px;
+      font-size: 24px;
+      border-radius: 5px;
+    }
+
+    nav {
+      background-color: #333;
+      color: white;
+      padding: 10px;
+      text-align: center;
+    }
+
+    nav a {
+      color: white;
+      margin: 0 15px;
+      text-decoration: none;
+      font-size: 16px;
+    }
+
+    nav a:hover {
+      text-decoration: underline;
+    }
+
+    .container {
+      width: 90%;
+      max-width: 1200px;
+      margin: auto;
+      overflow: hidden;
+      padding: 20px 0;
+    }
+
+    h1, h2 {
+      color: #444;
+    }
+
+    .section {
+      margin-bottom: 40px;
+    }
+
+    .menu-section a {
+      display: inline-block;
+      margin: 10px 0;
+      padding: 10px 20px;
+      background-color: #f4b400;
+      color: white;
+      text-decoration: none;
+      font-size: 16px;
+      border-radius: 5px;
+    }
+
+    .menu-section a:hover {
+      background-color: #d99300;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      background: #fff;
+    }
+
+    th, td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f4b400;
+      color: white;
+    }
+
+    footer {
+      background-color: #333;
+      color: white;
+      text-align: center;
+      padding: 10px 0;
+      position: relative;
+      bottom: 0;
+      width: 100%;
+    }
+
+    .contact, .map {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .map a {
+      color: #f4b400;
+      text-decoration: none;
+    }
+
+    /* Responzivita pro mobilní zařízení */
+    @media (max-width: 768px) {
+      header h1 {
+        font-size: 18px;
+        padding: 5px 10px;
+      }
+
+      nav a {
+        display: block;
+        margin: 10px 0;
+      }
+
+      .menu-section a {
+        font-size: 14px;
+        padding: 8px 15px;
+      }
+
+      table th, table td {
+        font-size: 14px;
+        padding: 8px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      table th, table td {
+        font-size: 12px;
+        padding: 6px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <img src="img/banner.jpg" alt="Restaurace U Kaštanu - Banner">
+    <h1>Restaurace U Kaštanu</h1>
+  </header>
+
+  <!-- Navigation -->
+  <nav>
+    <a href="#menu">Denní menu</a>
+    <a href="#opening-hours">Otevírací doba</a>
+    <a href="#contact">Kontakt</a>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="container">
+    <!-- Menu Section -->
+    <section id="menu" class="section menu-section">
+      <h1>Denní menu</h1>
+      <p>Pro zobrazení denního a odpoledního menu klikněte na následující odkazy:</p>
+      <a href="http://www.kastan-vcelna.cz/djl.pdf" target="_blank">Denní menu (PDF)</a>
+      <a href="https://example.com/odpoledni-menu.pdf" target="_blank">Odpolední menu (PDF)</a>
+    </section>
+
+    <!-- Opening Hours -->
+    <section id="opening-hours" class="section">
+      <h1>Otevírací doba</h1>
+      <table>
+        <thead>
+          <tr>
+            <th>Den</th>
+            <th>Čas</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Pondělí</td><td>10:00 – 20:00 / kuchyně do 19:30</td></tr>
+          <tr><td>Úterý</td><td>10:00 – 20:00 / kuchyně do 19:30</td></tr>
+          <tr><td>Středa</td><td>10:00 – 20:00 / kuchyně do 19:30</td></tr>
+          <tr><td>Čtvrtek</td><td>10:00 – 20:00 / kuchyně do 19:30</td></tr>
+          <tr><td>Pátek</td><td>10:00 – 21:00 / kuchyně do 20:00</td></tr>
+          <tr><td>Sobota</td><td>11:00 – 21:00 / kuchyně do 20:00</td></tr>
+          <tr><td>Neděle</td><td>11:00 – 20:00 / kuchyně do 19:30</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Contact -->
+    <section id="contact" class="section">
+      <h1>Kontakt</h1>
+      <p><strong>Restaurace U Kaštanu</strong></p>
+      <p>tř. 5. května 461, Včelná 37382</p>
+      <p>Tel.: 387 250 344 / 736 136 789</p>
+      <p>E-mail: <a href="mailto:u.kastanu@volny.cz">u.kastanu@volny.cz</a></p>
+    </section>
+
+    <!-- Map -->
+    <div class="map">
+      <h2>Kde nás najdete</h2>
+      <p><a href="https://goo.gl/maps/XXXX" target="_blank">Zobrazit na Mapách</a></p>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <p>&copy; 2024 Restaurace U Kaštanu</p>
+  </footer>
+</body>
+</html>
