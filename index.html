@@ -1,241 +1,183 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="cs">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Restaurace U Kaštanu</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lepší tarif za méně | Doporučení</title>
+  <meta name="description" content="Získej výhodnější tarif během pár minut. Klikni, vyplň nezávazný formulář a nech si připravit nejlepší nabídku." />
+
+  <!-- Open Graph / Social -->
+  <meta property="og:title" content="Lepší tarif za méně – nezávazná nabídka" />
+  <meta property="og:description" content="Klikni, vyplň krátký formulář a získej nejvýhodnější tarif. Rychle, zdarma a nezávazně." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://xaspi7.github.io/vcelna" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: #f8f8f8;
-      color: #333;
-      line-height: 1.6;
+    :root{
+      --bg: #0f172a;          /* slate-900 */
+      --panel: #111827;       /* gray-900 */
+      --text: #e5e7eb;        /* gray-200 */
+      --muted: #9ca3af;       /* gray-400 */
+      --brand: #22c55e;       /* green-500 */
+      --brand-600: #16a34a;   /* green-600 */
+      --ring: rgba(34,197,94,0.25);
     }
-
-    /* Header banner */
-    header {
-      position: relative;
-      text-align: center;
-      background-color: #333;
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background: radial-gradient(1200px 600px at 80% -10%, rgba(34,197,94,.15), transparent 60%),
+                  radial-gradient(800px 400px at 0% 0%, rgba(59,130,246,.12), transparent 50%),
+                  var(--bg);
+      color:var(--text);
     }
+    a{color:inherit}
+    .wrap{max-width:1000px;margin:0 auto;padding:24px}
+    header{display:flex;align-items:center;justify-content:space-between;gap:16px}
+    .logo{display:flex;align-items:center;gap:12px;font-weight:700;letter-spacing:.2px}
+    .logo-badge{background:linear-gradient(135deg,#22c55e,#10b981);color:#052e16;padding:8px 10px;border-radius:12px;font-weight:800}
+    nav a{opacity:.9;text-decoration:none;margin-left:16px}
 
-    header img {
-      width: 100%;
-      height: auto;
-      max-height: 400px;
-      object-fit: cover;
-      filter: brightness(0.9);
-    }
+    .hero{display:grid;grid-template-columns:1.2fr .8fr;gap:28px;align-items:center;padding:48px 0}
+    .card{background:rgba(17,24,39,.7);border:1px solid rgba(255,255,255,.08);backdrop-filter: blur(6px); border-radius:20px; padding:28px; box-shadow: 0 10px 30px rgba(0,0,0,.25)}
+    .hero h1{font-size:clamp(28px,3.4vw,46px);line-height:1.1;margin:0 0 12px}
+    .hero p.lead{font-size:clamp(16px,2vw,20px);color:var(--muted);margin:0 0 20px}
 
-    header h1 {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      color: white;
-      background-color: rgba(0, 0, 0, 0.6);
-      padding: 10px 20px;
-      font-size: 24px;
-      font-weight: bold;
-      border-radius: 5px;
-    }
+    .bullets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0}
+    .chip{display:flex;align-items:center;gap:8px;background:#0b1220;border:1px solid rgba(255,255,255,.08);padding:10px 12px;border-radius:999px;font-size:14px}
 
-    /* Navigation */
-    nav {
-      background-color: #444;
-      color: white;
-      padding: 15px 10px;
-      text-align: center;
-      display: flex;
-      justify-content: center;
-      gap: 20px;
-      flex-wrap: wrap;
-    }
+    .cta{display:inline-flex;align-items:center;gap:10px;background:var(--brand);color:#052e16;font-weight:800;text-decoration:none;padding:14px 18px;border-radius:14px;box-shadow:0 8px 18px rgba(34,197,94,.35);
+      transition: transform .06s ease, box-shadow .2s ease;}
+    .cta:hover{transform:translateY(-1px); box-shadow:0 14px 28px rgba(34,197,94,.45)}
+    .cta:focus{outline:3px solid var(--ring)}
+    .cta-secondary{display:inline-flex;align-items:center;gap:10px;font-weight:700;padding:12px 14px;text-decoration:none;border-radius:12px;border:1px solid rgba(255,255,255,.12)}
 
-    nav a {
-      color: white;
-      text-decoration: none;
-      font-size: 16px;
-      font-weight: bold;
-      padding: 10px 15px;
-      background-color: #555;
-      border-radius: 5px;
-    }
+    .aside{font-size:14px;color:var(--muted);margin-top:14px}
 
-    nav a:hover {
-      text-decoration: underline;
-      background-color: #666;
-    }
+    .steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; margin:36px 0 14px}
+    .step{background:#0b1220;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:18px}
+    .step h3{margin:0 0 6px;font-size:18px}
+    .step p{margin:0;color:var(--muted)}
 
-    .container {
-      width: 90%;
-      max-width: 1200px;
-      margin: auto;
-      overflow: hidden;
-      padding: 20px 0;
-    }
+    .faq{margin:40px 0}
+    details{background:#0b1220;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;margin-bottom:10px}
+    summary{cursor:pointer;font-weight:700}
+    details p{color:var(--muted);margin:8px 0 0}
 
-    h1, h2 {
-      color: #444;
-      font-weight: bold;
-    }
+    .footer{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:22px 0;color:var(--muted);font-size:14px}
 
-    .section {
-      margin-bottom: 40px;
-    }
+    .badge{font-size:12px;padding:6px 10px;border-radius:999px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.35);color:#86efac;font-weight:700}
 
-    .menu-section a {
-      display: inline-block;
-      margin: 10px 0;
-      padding: 10px 20px;
-      background-color: #f4b400;
-      color: white;
-      text-decoration: none;
-      font-size: 16px;
-      font-weight: bold;
-      border-radius: 5px;
-    }
+    .sticky-cta{position:sticky;bottom:16px;display:flex;justify-content:center;margin-top:6px}
+    .sticky-cta a{padding:14px 18px}
 
-    .menu-section a:hover {
-      background-color: #d99300;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 20px 0;
-      background: #fff;
-    }
-
-    th, td {
-      padding: 10px;
-      border: 1px solid #ddd;
-      text-align: left;
-    }
-
-    th {
-      background-color: #f4b400;
-      color: white;
-      font-weight: bold;
-    }
-
-    footer {
-      background-color: #333;
-      color: white;
-      text-align: center;
-      padding: 10px 0;
-      position: relative;
-      bottom: 0;
-      width: 100%;
-    }
-
-    .contact, .map {
-      text-align: center;
-      margin-top: 20px;
-    }
-
-    .map iframe {
-      border: none;
-    }
-
-    /* Responsivita */
-    @media (max-width: 768px) {
-      nav {
-        gap: 15px;
-      }
-    }
-
-    @media (max-width: 480px) {
-      nav a {
-        font-size: 14px;
-        padding: 8px 10px;
-      }
-      table th, table td {
-        font-size: 12px;
-        padding: 6px;
-      }
+    @media (max-width:900px){
+      .hero{grid-template-columns:1fr}
+      .bullets{grid-template-columns:1fr 1fr}
+      .steps{grid-template-columns:1fr}
+      nav{display:none}
     }
   </style>
 </head>
 <body>
-  <!-- Header -->
-  <header>
-    <img src="img/banner.jpg" alt="Restaurace U Kaštanu - Banner">
-  
-  </header>
+  <div class="wrap">
+    <header>
+      <div class="logo">
+        <span class="logo-badge">Tarif+ </span>
+        <span>Výhodnější tarify snadno</span>
+      </div>
+      <nav>
+        <a href="#jak-to-funguje">Jak to funguje</a>
+        <a href="#faq">Časté dotazy</a>
+        <a class="badge" href="#cta">Nezávazný formulář</a>
+      </nav>
+    </header>
 
-  <!-- Navigation -->
-  <nav>
-    <a href="#menu">Denní menu</a>
-    <a href="#opening-hours">Otevírací doba</a>
-    <a href="#contact">Kontakt</a>
-  </nav>
+    <section class="hero">
+      <div class="card">
+        <h1>Chceš <u>lepší tarif</u> za méně peněz?</h1>
+        <p class="lead">Za pár minut porovnáme nabídky a pošleme tu nejvýhodnější. Zdarma a bez závazků.</p>
 
-  <!-- Main Content -->
-  <div class="container">
-    <!-- Menu Section -->
-    <section id="menu" class="section menu-section">
-      <h2>Naše nabídka</h2>
-      <a href="http://www.kastan-vcelna.cz/djl.pdf" target="_blank"><strong>Denní menu</strong></a>
-      <a href="http://www.kastan-vcelna.cz/ojl.pdf" target="_blank"><strong>Odpolední menu</strong></a>
-      <a href="http://www.kastan-vcelna.cz/sjl.pdf" target="_blank"><strong>Stálé menu</strong></a>
-      <a href="http://www.kastan-vcelna.cz/njl.pdf" target="_blank"><strong>Nápoje</strong></a>
-    </section>
+        <div class="bullets">
+          <div class="chip">⚡ Rychlé vyřízení</div>
+          <div class="chip">💬 Lidská podpora</div>
+          <div class="chip">💸 Úspora peněz</div>
+        </div>
 
-    <!-- Opening Hours -->
-    <section id="opening-hours" class="section">
-      <h2>Otevírací doba</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Den</th>
-            <th>Čas</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td><strong>Pondělí</strong></td><td>10:00 – 20:00 / kuchyně do 19:30</td></tr>
-          <tr><td><strong>Úterý</strong></td><td>10:00 – 20:00 / kuchyně do 19:30</td></tr>
-          <tr><td><strong>Středa</strong></td><td>10:00 – 20:00 / kuchyně do 19:30</td></tr>
-          <tr><td><strong>Čtvrtek</strong></td><td>10:00 – 20:00 / kuchyně do 19:30</td></tr>
-          <tr><td><strong>Pátek</strong></td><td>10:00 – 21:00 / kuchyně do 20:00</td></tr>
-          <tr><td><strong>Sobota</strong></td><td>11:00 – 21:00 / kuchyně do 20:00</td></tr>
-          <tr><td><strong>Neděle</strong></td><td>11:00 – 20:00 / kuchyně do 19:30</td></tr>
-        </tbody>
-      </table>
-    </section>
-
-    <!-- Kontakt a mapa -->
-    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 20px;">
-      <div style="flex: 1; min-width: 250px;">
-        <h2>Kontakt</h2>
-        <p><strong>Restaurace U Kaštanu</strong><br>
-        tř. 5. května 461, Včelná 37382</p>
-        <p>Tel.: <strong>387 250 344</strong> / <strong>736 136 789</strong></p>
-        <p>E-mail: <a href="mailto:u.kastanu@volny.cz"><strong>u.kastanu@volny.cz</strong></a></p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap" id="cta">
+          <a class="cta" target="_blank" rel="noopener nofollow" href="https://docs.google.com/forms/d/e/1FAIpQLSde5XH9y6DcrJezIqFyDUSZrD-vAiFet6_nlNz4pg_MDQnT4A/viewform">Vyplnit nezávazný formulář</a>
+          <a class="cta-secondary" href="#jak-to-funguje">Jak to funguje?</a>
+        </div>
+        <p class="aside">Tip: Do kolonky <b>„Doporučitel/Doporucitel“</b> prosím napiš <b><span id="tvoje-jmeno">Adam Šanda</span></b>, aby se sleva správně spárovala.</p>
       </div>
 
-      <!-- Map -->
-      <div style="flex: 1; min-width: 250px; text-align: center;">
-        <h2>Kde nás najdete</h2>
-        <iframe 
-          src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d1347.3653104289653!2d14.453234627674123!3d48.924071510515944!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2z48.924072LCAxNC40NTMyNA!5e0!3m2!1scs!2scz!4v1695240950026!5m2!1scs!2scz" 
-          width="100%" 
-          height="250" 
-          style="border:0;" 
-          allowfullscreen="" 
-          loading="lazy" 
-          referrerpolicy="no-referrer-when-downgrade">
-        </iframe>
+      <div class="card" aria-label="ilustrace">
+        <div style="display:grid;gap:16px">
+          <div style="display:flex;gap:10px;align-items:center"><span>✓</span><div>
+            <div style="font-weight:700">Nezávazně</div>
+            <div style="color:var(--muted);font-size:14px">Formulář jen ověří možnosti a připraví cenovou nabídku.</div>
+          </div></div>
+          <div style="display:flex;gap:10px;align-items:center"><span>✓</span><div>
+            <div style="font-weight:700">Bez starostí</div>
+            <div style="color:var(--muted);font-size:14px">Pomůžeme s přechodem i zachováním čísla.</div>
+          </div></div>
+          <div style="display:flex;gap:10px;align-items:center"><span>✓</span><div>
+            <div style="font-weight:700">Transparentně</div>
+            <div style="color:var(--muted);font-size:14px">Žádné skryté poplatky – jasné podmínky předem.</div>
+          </div></div>
+        </div>
       </div>
-    </div>
+    </section>
+
+    <section id="jak-to-funguje">
+      <h2>Jak to funguje</h2>
+      <div class="steps">
+        <div class="step">
+          <h3>1) Klikni na formulář</h3>
+          <p>Otevře se bezpečný Google Form. Zabere to 1–2 minuty.</p>
+        </div>
+        <div class="step">
+          <h3>2) Uveď „Doporučitel“</h3>
+          <p>Do kolonky napiš <b><span id="tvoje-jmeno-2">Adam Šanda</span></b>, ať je nabídka přiřazená.</p>
+        </div>
+        <div class="step">
+          <h3>3) Dostaneš nabídku</h3>
+          <p>Partner ti pošle nejlepší tarif podle tvých potřeb. Rozhodnutí je na tobě.</p>
+        </div>
+      </div>
+      <div class="sticky-cta">
+        <a class="cta" target="_blank" rel="noopener nofollow" href="https://docs.google.com/forms/d/e/1FAIpQLSde5XH9y6DcrJezIqFyDUSZrD-vAiFet6_nlNz4pg_MDQnT4A/viewform">Chci lepší tarif</a>
+      </div>
+    </section>
+
+    <section class="faq" id="faq">
+      <h2>Časté dotazy</h2>
+      <details>
+        <summary>Je to opravdu nezávazné?</summary>
+        <p>Ano. Vyplnění slouží k přípravě nabídky. Službu si objednáš pouze pokud ti podmínky sednou.</p>
+      </details>
+      <details>
+        <summary>Kdo zpracovává formulář?</summary>
+        <p>Formulář běží na Google Forms a je spravován poskytovatelem tarifů. Já sám žádná citlivá data neshromažďuji na tomto webu.</p>
+      </details>
+      <details>
+        <summary>Přenesu si číslo k novému operátorovi?</summary>
+        <p>Ano, přenos čísla je běžná věc. Partner s ním pomůže a hlídá termíny, aby nedošlo k výpadku služeb.</p>
+      </details>
+    </section>
+
+    <footer class="footer">
+      <div>© <span id="year"></span> Tarif+ – nezávazné doporučení</div>
+      <div><a class="badge" target="_blank" rel="noopener nofollow" href="https://docs.google.com/forms/d/e/1FAIpQLSde5XH9y6DcrJezIqFyDUSZrD-vAiFet6_nlNz4pg_MDQnT4A/viewform">Vyplnit formulář</a></div>
+    </footer>
   </div>
 
-  <!-- Footer -->
-  <footer>
-    <p>&copy; 2024 Restaurace U Kaštanu</p>
-  </footer>
+  <script>
+    // Nastav aktuální rok
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
 </body>
 </html>
-
