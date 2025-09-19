@@ -24,6 +24,9 @@
       --brand: #22c55e;       /* green-500 */
       --brand-600: #16a34a;   /* green-600 */
       --ring: rgba(34,197,94,0.25);
+      --warn-bg: #fef3c7;     /* amber-100 */
+      --warn-border: #f59e0b; /* amber-500 */
+      --warn-text: #92400e;   /* amber-700 */
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -55,6 +58,12 @@
     .cta:focus{outline:3px solid var(--ring)}
     .cta-secondary{display:inline-flex;align-items:center;gap:10px;font-weight:700;padding:12px 14px;text-decoration:none;border-radius:12px;border:1px solid rgba(255,255,255,.12)}
 
+    .important-note{margin-top:14px;padding:14px 16px;background:var(--warn-bg);border:2px solid var(--warn-border);border-radius:14px;color:var(--warn-text);font-weight:800;text-align:center}
+    .important-note b{color:inherit}
+    .important-note .name{white-space:nowrap}
+    .important-note .pulse{display:inline-block;transform-origin:center;animation:pulse 1.8s ease-in-out infinite}
+    @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.06)}100%{transform:scale(1)}}
+
     .aside{font-size:14px;color:var(--muted);margin-top:14px}
 
     .steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; margin:36px 0 14px}
@@ -71,7 +80,7 @@
 
     .badge{font-size:12px;padding:6px 10px;border-radius:999px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.35);color:#86efac;font-weight:700}
 
-    .sticky-cta{position:sticky;bottom:16px;display:flex;justify-content:center;margin-top:6px}
+    .sticky-cta{position:sticky;bottom:16px;display:flex;flex-direction:column;gap:10px;justify-content:center;margin-top:6px}
     .sticky-cta a{padding:14px 18px}
 
     @media (max-width:900px){
@@ -111,7 +120,14 @@
           <a class="cta" target="_blank" rel="noopener nofollow" href="https://docs.google.com/forms/d/e/1FAIpQLSde5XH9y6DcrJezIqFyDUSZrD-vAiFet6_nlNz4pg_MDQnT4A/viewform">Vyplnit nezávazný formulář</a>
           <a class="cta-secondary" href="#jak-to-funguje">Jak to funguje?</a>
         </div>
-        <p class="aside">Tip: Do kolonky <b>„Doporučitel/Doporucitel“</b> prosím napiš <b><span id="tvoje-jmeno">Adam Šanda</span></b>, aby se sleva správně spárovala.</p>
+
+        <!-- VÝRAZNÉ UPOZORNĚNÍ NA DOPORUČITELE -->
+        <div class="important-note" role="status" aria-live="polite">
+          <span class="pulse">⚠️</span>
+          Nezapomeň prosím do kolonky <b>„Doporučitel“</b> napsat: <b class="name">Adam Šanda</b>
+        </div>
+
+        <p class="aside">Formulář je provozován přes Google Forms poskytovatelem tarifů. Tento web žádná citlivá data neukládá.</p>
       </div>
 
       <div class="card" aria-label="ilustrace">
@@ -141,7 +157,7 @@
         </div>
         <div class="step">
           <h3>2) Uveď „Doporučitel“</h3>
-          <p>Do kolonky napiš <b><span id="tvoje-jmeno-2">Adam Šanda</span></b>, ať je nabídka přiřazená.</p>
+          <p>Do kolonky napiš <b>Adam Šanda</b>, ať je nabídka přiřazená.</p>
         </div>
         <div class="step">
           <h3>3) Dostaneš nabídku</h3>
@@ -150,6 +166,9 @@
       </div>
       <div class="sticky-cta">
         <a class="cta" target="_blank" rel="noopener nofollow" href="https://docs.google.com/forms/d/e/1FAIpQLSde5XH9y6DcrJezIqFyDUSZrD-vAiFet6_nlNz4pg_MDQnT4A/viewform">Chci lepší tarif</a>
+        <div class="important-note" aria-hidden="false">
+          ✍️ Do kolonky <b>„Doporučitel“</b> napiš: <b class="name">Adam Šanda</b>
+        </div>
       </div>
     </section>
 
