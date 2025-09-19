@@ -14,7 +14,7 @@
 
   <!-- Vlastní ikona stránky -->
   <link rel="icon" type="image/png" href="img/5g.png">
-<link rel="apple-touch-icon" href="img/5g.png">
+  <link rel="apple-touch-icon" href="img/5g.png">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -64,12 +64,6 @@
     .cta:focus{outline:3px solid var(--ring)}
     .cta-secondary{display:inline-flex;align-items:center;gap:10px;font-weight:700;padding:12px 14px;text-decoration:none;border-radius:12px;border:1px solid rgba(255,255,255,.12)}
 
-    .important-note{margin-top:14px;padding:14px 16px;background:var(--warn-bg);border:2px solid var(--warn-border);border-radius:14px;color:var(--warn-text);font-weight:800;text-align:center}
-    .important-note b{color:inherit}
-    .important-note .name{white-space:nowrap}
-    .important-note .pulse{display:inline-block;transform-origin:center;animation:pulse 1.8s ease-in-out infinite}
-    @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.06)}100%{transform:scale(1)}}
-
     .aside{font-size:14px;color:var(--muted);margin-top:14px}
 
     .steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; margin:36px 0 14px}
@@ -88,6 +82,18 @@
 
     .sticky-cta{position:sticky;bottom:16px;display:flex;flex-direction:column;gap:10px;justify-content:center;margin-top:6px}
     .sticky-cta a{padding:14px 18px}
+
+    /* Modal */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:16px;z-index:40}
+    .modal{width:min(560px,100%);background:#0b1220;border:1px solid rgba(255,255,255,.1);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.45);padding:20px}
+    .modal h3{margin:0 0 8px;font-size:22px}
+    .modal p{margin:0 0 14px;color:var(--muted)}
+    .modal .callout{margin:10px 0;padding:12px 14px;background:var(--warn-bg);border:2px solid var(--warn-border);border-radius:12px;color:var(--warn-text);font-weight:800;text-align:center}
+    .modal .row{display:flex;gap:10px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 14px;border-radius:12px;text-decoration:none;font-weight:700;border:1px solid rgba(255,255,255,.12)}
+    .btn-primary{background:var(--brand);color:#052e16;border-color:transparent}
+    .btn:hover{transform:translateY(-1px)}
+    .hidden{display:none}
 
     @media (max-width:900px){
       .hero{grid-template-columns:1fr}
@@ -125,17 +131,12 @@
         </div>
 
         <div style="display:flex;gap:12px;flex-wrap:wrap" id="cta">
-          <a class="cta" target="_blank" rel="noopener nofollow" href="https://docs.google.com/forms/d/e/1FAIpQLSde5XH9y6DcrJezIqFyDUSZrD-vAiFet6_nlNz4pg_MDQnT4A/viewform">Vyplnit nezávazný formulář</a>
+          <a class="cta open-modal" data-href="https://docs.google.com/forms/d/e/1FAIpQLSde5XH9y6DcrJezIqFyDUSZrD-vAiFet6_nlNz4pg_MDQnT4A/viewform" href="#">Vyplnit nezávazný formulář</a>
           <a class="cta-secondary" href="#jak-to-funguje">Jak to funguje?</a>
         </div>
 
-        <!-- VÝRAZNÉ UPOZORNĚNÍ NA DOPORUČITELE -->
-        <div class="important-note" role="status" aria-live="polite">
-          <span class="pulse">⚠️</span>
-          Nezapomeň prosím do kolonky <b>„Doporučitel“</b> napsat: <b class="name">Adam Šanda</b>
-        </div>
-
-        <p class="aside">Formulář je provozován přes Google Forms poskytovatelem tarifů. Tento web žádná citlivá data neukládá.</p>
+        <!-- Nenápadná poznámka jako dřív -->
+        <p class="aside">Tip: Do kolonky <b>„Doporučitel“</b> uveď prosím <b>Adam Šanda</b>, aby se nabídka správně spárovala.</p>
       </div>
 
       <div class="card" aria-label="ilustrace">
@@ -173,7 +174,7 @@
         </div>
       </div>
       <div class="sticky-cta">
-        <a class="cta" target="_blank" rel="noopener nofollow" href="https://docs.google.com/forms/d/e/1FAIpQLSde5XH9y6DcrJezIqFyDUSZrD-vAiFet6_nlNz4pg_MDQnT4A/viewform">Chci lepší tarif</a>
+        <a class="cta open-modal" href="#" data-href="https://docs.google.com/forms/d/e/1FAIpQLSde5XH9y6DcrJezIqFyDUSZrD-vAiFet6_nlNz4pg_MDQnT4A/viewform">Chci lepší tarif</a>
       </div>
     </section>
 
@@ -195,14 +196,50 @@
 
     <footer class="footer">
       <div>© <span id="year"></span> Tarif+ – nezávazné doporučení</div>
-      <div><a class="badge" target="_blank" rel="noopener nofollow" href="https://docs.google.com/forms/d/e/1FAIpQLSde5XH9y6DcrJezIqFyDUSZrD-vAiFet6_nlNz4pg_MDQnT4A/viewform">Vyplnit formulář</a></div>
+      <div><a class="badge open-modal" href="#" data-href="https://docs.google.com/forms/d/e/1FAIpQLSde5XH9y6DcrJezIqFyDUSZrD-vAiFet6_nlNz4pg_MDQnT4A/viewform">Vyplnit formulář</a></div>
     </footer>
+  </div>
+
+  <!-- Modal overlay -->
+  <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalDesc">
+    <div class="modal">
+      <h3 id="modalTitle">Ještě drobnost před odesláním</h3>
+      <p id="modalDesc">Ať se sleva správně spáruje:</p>
+      <div class="callout">✍️ Do kolonky <b>„Doporučitel“</b> napiš: <b>Adam Šanda</b></div>
+      <div class="row">
+        <button class="btn" id="closeModal" type="button">Zpět</button>
+        <a class="btn btn-primary" id="continueBtn" href="#" target="_blank" rel="noopener nofollow">Pokračovat na formulář</a>
+      </div>
+    </div>
   </div>
 
   <script>
     // Nastav aktuální rok
     document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Modal logika
+    const backdrop = document.getElementById('modalBackdrop');
+    const continueBtn = document.getElementById('continueBtn');
+    const closeBtn = document.getElementById('closeModal');
+
+    function openModal(url){
+      continueBtn.setAttribute('href', url);
+      backdrop.style.display = 'flex';
+    }
+    function closeModal(){
+      backdrop.style.display = 'none';
+    }
+
+    document.querySelectorAll('.open-modal').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        const url = el.getAttribute('data-href');
+        openModal(url);
+      });
+    });
+    closeBtn.addEventListener('click', closeModal);
+    backdrop.addEventListener('click', (e) => { if(e.target === backdrop) closeModal(); });
+    document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeModal(); });
   </script>
 </body>
 </html>
-
