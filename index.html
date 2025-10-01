@@ -21,16 +21,16 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     :root{
-      --bg: #0f172a;          /* slate-900 */
-      --panel: #111827;       /* gray-900 */
-      --text: #e5e7eb;        /* gray-200 */
-      --muted: #9ca3af;       /* gray-400 */
-      --brand: #22c55e;       /* green-500 */
-      --brand-600: #16a34a;   /* green-600 */
+      --bg: #0f172a;
+      --panel: #111827;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --brand: #22c55e;
+      --brand-600: #16a34a;
       --ring: rgba(34,197,94,0.25);
-      --warn-bg: #fef3c7;     /* amber-100 */
-      --warn-border: #f59e0b; /* amber-500 */
-      --warn-text: #92400e;   /* amber-700 */
+      --warn-bg: #fef3c7;
+      --warn-border: #f59e0b;
+      --warn-text: #92400e;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -78,8 +78,6 @@
 
     .footer{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:22px 0;color:var(--muted);font-size:14px}
 
-    .badge{font-size:12px;padding:6px 10px;border-radius:999px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.35);color:#86efac;font-weight:700}
-
     .sticky-cta{position:sticky;bottom:16px;display:flex;flex-direction:column;gap:10px;justify-content:center;margin-top:6px}
     .sticky-cta a{padding:14px 18px}
 
@@ -88,9 +86,9 @@
     .modal{width:min(560px,100%);background:#0b1220;border:1px solid rgba(255,255,255,.1);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.45);padding:20px}
     .modal h3{margin:0 0 8px;font-size:22px}
     .modal p{margin:0 0 14px;color:var(--muted)}
-    .modal .callout{margin:10px 0;padding:12px 14px;background:var(--warn-bg);border:2px solid var(--warn-border);border-radius:12px;color:var(--warn-text);font-weight:800;text-align:center}
+    .modal .callout{margin:10px 0;padding:12px 14px;background:var(--warn-bg);border:2px solid var(--warn-border);border-radius:12px;color:var(--warn-text);font-weight:800;text-align:center;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
     .modal .row{display:flex;gap:10px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
-    .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 14px;border-radius:12px;text-decoration:none;font-weight:700;border:1px solid rgba(255,255,255,.12)}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:12px;text-decoration:none;font-weight:700;border:1px solid rgba(255,255,255,.12);cursor:pointer}
     .btn-primary{background:var(--brand);color:#052e16;border-color:transparent}
     .btn:hover{transform:translateY(-1px)}
 
@@ -133,7 +131,6 @@
           <a class="cta-secondary" href="#jak-to-funguje">Jak to funguje?</a>
         </div>
 
-        <!-- Nenápadná poznámka jako dřív -->
         <p class="aside">Tip: Do kolonky <b>„Doporučitel“</b> uveď prosím <b>Adam Šanda</b>, aby se nabídka správně spárovala.</p>
       </div>
 
@@ -202,8 +199,10 @@
     <div class="modal">
       <h3 id="modalTitle">Ještě drobnost před odesláním</h3>
       <p id="modalDesc">Ať se sleva správně spáruje:</p>
-      <div class="callout">✍️ Do kolonky <b>„Doporučitel“</b> napiš: <b>Adam Šanda</b></div>
-      <button id="copyBtn" class="btn" style="margin-left:10px; padding:6px 10px; font-size:13px;">📋 Kopírovat</button>
+      <div class="callout">
+        ✍️ Do kolonky <b>„Doporučitel“</b> napiš: <b id="refName">Adam Šanda</b>
+        <button id="copyBtn" class="btn" type="button">📋 Kopírovat</button>
+      </div>
       <div class="row">
         <button class="btn" id="closeModal" type="button">Zpět</button>
         <a class="btn btn-primary" id="continueBtn" href="#" target="_blank" rel="noopener nofollow">Pokračovat na formulář</a>
@@ -238,16 +237,17 @@
     closeBtn.addEventListener('click', closeModal);
     backdrop.addEventListener('click', (e) => { if(e.target === backdrop) closeModal(); });
     document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeModal(); });
-    // Copy button funkce
-  const copyBtn = document.getElementById("copyBtn");
-  const refName = document.getElementById("refName").innerText;
 
-  copyBtn.addEventListener("click", () => {
-    navigator.clipboard.writeText(refName).then(() => {
-      copyBtn.textContent = "✅ Zkopírováno!";
-      setTimeout(() => copyBtn.textContent = "📋 Kopírovat", 2000);
+    // Copy button logika
+    const copyBtn = document.getElementById("copyBtn");
+    const refName = document.getElementById("refName").innerText;
+
+    copyBtn.addEventListener("click", () => {
+      navigator.clipboard.writeText(refName).then(() => {
+        copyBtn.textContent = "✅ Zkopírováno!";
+        setTimeout(() => copyBtn.textContent = "📋 Kopírovat", 2000);
+      });
     });
-  });
   </script>
 </body>
 </html>
