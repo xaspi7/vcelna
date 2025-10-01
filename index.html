@@ -203,6 +203,7 @@
       <h3 id="modalTitle">Ještě drobnost před odesláním</h3>
       <p id="modalDesc">Ať se sleva správně spáruje:</p>
       <div class="callout">✍️ Do kolonky <b>„Doporučitel“</b> napiš: <b>Adam Šanda</b></div>
+      <button id="copyBtn" class="btn" style="margin-left:10px; padding:6px 10px; font-size:13px;">📋 Kopírovat</button>
       <div class="row">
         <button class="btn" id="closeModal" type="button">Zpět</button>
         <a class="btn btn-primary" id="continueBtn" href="#" target="_blank" rel="noopener nofollow">Pokračovat na formulář</a>
@@ -237,7 +238,16 @@
     closeBtn.addEventListener('click', closeModal);
     backdrop.addEventListener('click', (e) => { if(e.target === backdrop) closeModal(); });
     document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeModal(); });
+    // Copy button funkce
+  const copyBtn = document.getElementById("copyBtn");
+  const refName = document.getElementById("refName").innerText;
+
+  copyBtn.addEventListener("click", () => {
+    navigator.clipboard.writeText(refName).then(() => {
+      copyBtn.textContent = "✅ Zkopírováno!";
+      setTimeout(() => copyBtn.textContent = "📋 Kopírovat", 2000);
+    });
+  });
   </script>
 </body>
 </html>
-
