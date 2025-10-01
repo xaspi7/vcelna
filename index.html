@@ -86,7 +86,7 @@
     .modal{width:min(560px,100%);background:#0b1220;border:1px solid rgba(255,255,255,.1);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.45);padding:20px}
     .modal h3{margin:0 0 8px;font-size:22px}
     .modal p{margin:0 0 14px;color:var(--muted)}
-    .modal .callout{margin:10px 0;padding:12px 14px;background:var(--warn-bg);border:2px solid var(--warn-border);border-radius:12px;color:var(--warn-text);font-weight:800;text-align:center;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
+    .modal .callout{margin:10px 0;padding:12px 14px;background:var(--warn-bg);border:2px solid var(--warn-border);border-radius:12px;color:var(--warn-text);font-weight:800;text-align:center;display:flex;flex-direction:column;gap:8px}
     .modal .row{display:flex;gap:10px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
     .btn{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:12px;text-decoration:none;font-weight:700;border:1px solid rgba(255,255,255,.12);cursor:pointer}
     .btn-primary{background:var(--brand);color:#052e16;border-color:transparent}
@@ -131,7 +131,7 @@
           <a class="cta-secondary" href="#jak-to-funguje">Jak to funguje?</a>
         </div>
 
-        <p class="aside">Tip: Do kolonky <b>„Doporučitel“</b> uveď prosím <b>Adam Šanda</b>, aby se nabídka správně spárovala.</p>
+        <p class="aside">Tip: Do kolonky <b>„Doporučitel“</b> uveď prosím <b>Adam Šanda</b>, a do <b>„OKU kód“</b> napiš <b>zjistíte si sami</b>.</p>
       </div>
 
       <div class="card" aria-label="ilustrace">
@@ -160,8 +160,9 @@
           <p>Otevře se bezpečný Google Form. Zabere to 1–2 minuty.</p>
         </div>
         <div class="step">
-          <h3>2) Uveď „Doporučitel“</h3>
-          <p>Do kolonky napiš <b>Adam Šanda</b>, ať je nabídka přiřazená.</p>
+          <h3>2) Uveď „Doporučitel“ + OKU kód</h3>
+          <p>Do kolonky napiš <b>Adam Šanda</b>.  
+          OKU kód si zjistíte sami u T-Mobile (uveďte: <b>zjistíte si sami</b>).</p>
         </div>
         <div class="step">
           <h3>3) Dostaneš nabídku</h3>
@@ -202,6 +203,7 @@
       <div class="callout">
         ✍️ Do kolonky <b>„Doporučitel“</b> napiš: <b id="refName">Adam Šanda</b>
         <button id="copyBtn" class="btn" type="button">📋 Kopírovat</button>
+        <div>ℹ️ Do pole <b>„OKU kód“</b> napiš: <b>zjistíte si sami</b></div>
       </div>
       <div class="row">
         <button class="btn" id="closeModal" type="button">Zpět</button>
