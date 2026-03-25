@@ -1,341 +1,435 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
-import { CalendarDays, Dumbbell, Plus, Trash2, Utensils, CheckSquare2 } from "lucide-react";
-import { motion } from "framer-motion";
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fitness tracker</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f4f6f8;
+      color: #1f2937;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    h1 {
+      margin: 0 0 20px;
+      font-size: 32px;
+    }
+    h2 {
+      margin: 0 0 14px;
+      font-size: 22px;
+    }
+    .grid {
+      display: grid;
+      gap: 20px;
+    }
+    .stats {
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      margin-bottom: 20px;
+    }
+    .main {
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    }
+    .card {
+      background: white;
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+    }
+    .big-number {
+      font-size: 34px;
+      font-weight: 700;
+      margin: 8px 0 4px;
+    }
+    .muted {
+      color: #6b7280;
+      font-size: 14px;
+    }
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    input, select, textarea, button {
+      font: inherit;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      background: white;
+    }
+    textarea {
+      min-height: 180px;
+      resize: vertical;
+    }
+    .row > * {
+      flex: 1;
+      min-width: 120px;
+    }
+    button {
+      border: none;
+      background: #111827;
+      color: white;
+      padding: 10px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      min-width: 110px;
+    }
+    button:hover {
+      background: #000;
+    }
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      background: #fafafa;
+    }
+    .item-left {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex: 1;
+    }
+    .item-text {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .item-title {
+      font-weight: 600;
+    }
+    .small-btn {
+      background: #dc2626;
+      min-width: auto;
+      padding: 8px 12px;
+    }
+    .small-btn:hover {
+      background: #b91c1c;
+    }
+    .checkbox {
+      width: 18px;
+      height: 18px;
+    }
+    .done {
+      text-decoration: line-through;
+      color: #9ca3af;
+    }
+    .badge-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .badge {
+      background: #e5e7eb;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 13px;
+    }
+    @media (max-width: 640px) {
+      .container { padding: 16px; }
+      h1 { font-size: 26px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Fitness tracker</h1>
 
-const STORAGE_KEY = "adam-fitness-tracker-v1";
-
-const todayStr = () => new Date().toISOString().slice(0, 10);
-const tomorrowStr = () => {
-  const d = new Date();
-  d.setDate(d.getDate() + 1);
-  return d.toISOString().slice(0, 10);
-};
-
-const defaultState = {
-  workouts: [],
-  foodLog: [],
-  tomorrowPlan: [
-    { id: crypto.randomUUID(), text: "Připravit svačinu do práce", done: false },
-    { id: crypto.randomUUID(), text: "Nachystat protein / skyr", done: false },
-    { id: crypto.randomUUID(), text: "Naplánovat oběd na zítra", done: false },
-  ],
-  notes: "",
-};
-
-function loadState() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return defaultState;
-    const parsed = JSON.parse(raw);
-    return {
-      ...defaultState,
-      ...parsed,
-      workouts: parsed.workouts || [],
-      foodLog: parsed.foodLog || [],
-      tomorrowPlan: parsed.tomorrowPlan || defaultState.tomorrowPlan,
-      notes: parsed.notes || "",
-    };
-  } catch {
-    return defaultState;
-  }
-}
-
-export default function FitnessTrackerApp() {
-  const [data, setData] = useState(defaultState);
-  const [workoutDate, setWorkoutDate] = useState(todayStr());
-  const [workoutType, setWorkoutType] = useState("Push");
-  const [foodDate, setFoodDate] = useState(todayStr());
-  const [foodText, setFoodText] = useState("");
-  const [foodProtein, setFoodProtein] = useState("");
-  const [todoText, setTodoText] = useState("");
-
-  useEffect(() => {
-    setData(loadState());
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  }, [data]);
-
-  const addWorkout = () => {
-    const entry = {
-      id: crypto.randomUUID(),
-      date: workoutDate,
-      type: workoutType,
-    };
-    setData((prev) => ({ ...prev, workouts: [entry, ...prev.workouts] }));
-  };
-
-  const removeWorkout = (id) => {
-    setData((prev) => ({ ...prev, workouts: prev.workouts.filter((w) => w.id !== id) }));
-  };
-
-  const addFood = () => {
-    if (!foodText.trim()) return;
-    const entry = {
-      id: crypto.randomUUID(),
-      date: foodDate,
-      text: foodText.trim(),
-      protein: Number(foodProtein) || 0,
-    };
-    setData((prev) => ({ ...prev, foodLog: [entry, ...prev.foodLog] }));
-    setFoodText("");
-    setFoodProtein("");
-  };
-
-  const removeFood = (id) => {
-    setData((prev) => ({ ...prev, foodLog: prev.foodLog.filter((f) => f.id !== id) }));
-  };
-
-  const addTodo = () => {
-    if (!todoText.trim()) return;
-    setData((prev) => ({
-      ...prev,
-      tomorrowPlan: [
-        ...prev.tomorrowPlan,
-        { id: crypto.randomUUID(), text: todoText.trim(), done: false },
-      ],
-    }));
-    setTodoText("");
-  };
-
-  const toggleTodo = (id) => {
-    setData((prev) => ({
-      ...prev,
-      tomorrowPlan: prev.tomorrowPlan.map((item) =>
-        item.id === id ? { ...item, done: !item.done } : item
-      ),
-    }));
-  };
-
-  const removeTodo = (id) => {
-    setData((prev) => ({
-      ...prev,
-      tomorrowPlan: prev.tomorrowPlan.filter((item) => item.id !== id),
-    }));
-  };
-
-  const todayProtein = useMemo(() => {
-    return data.foodLog
-      .filter((f) => f.date === todayStr())
-      .reduce((sum, item) => sum + (item.protein || 0), 0);
-  }, [data.foodLog]);
-
-  const thisWeekWorkouts = useMemo(() => {
-    const now = new Date();
-    const start = new Date(now);
-    const day = (now.getDay() + 6) % 7;
-    start.setDate(now.getDate() - day);
-    start.setHours(0, 0, 0, 0);
-
-    return data.workouts.filter((w) => new Date(w.date) >= start).length;
-  }, [data.workouts]);
-
-  const recentWorkoutDays = useMemo(() => {
-    return [...new Set(data.workouts.map((w) => w.date))].slice(0, 7);
-  }, [data.workouts]);
-
-  return (
-    <div className="min-h-screen bg-slate-50 p-4 md:p-8">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="grid gap-4 md:grid-cols-3"
-        >
-          <Card className="rounded-2xl shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Dumbbell className="h-5 w-5" /> Tréninky tento týden
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{thisWeekWorkouts}</div>
-              <p className="mt-1 text-sm text-slate-500">Cíl: 4 tréninky týdně</p>
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-2xl shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Utensils className="h-5 w-5" /> Protein dnes
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{todayProtein} g</div>
-              <p className="mt-1 text-sm text-slate-500">Průběžný součet z jídel</p>
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-2xl shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <CalendarDays className="h-5 w-5" /> Zítřejší plán
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{tomorrowStr()}</div>
-              <p className="mt-1 text-sm text-slate-500">Checklist jídel a přípravy</p>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Card className="rounded-2xl shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <Dumbbell className="h-5 w-5" /> Trackování tréninků
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
-                <Input type="date" value={workoutDate} onChange={(e) => setWorkoutDate(e.target.value)} />
-                <select
-                  value={workoutType}
-                  onChange={(e) => setWorkoutType(e.target.value)}
-                  className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
-                >
-                  <option>Push</option>
-                  <option>Pull</option>
-                  <option>Legs</option>
-                  <option>Upper</option>
-                  <option>Other</option>
-                </select>
-                <Button onClick={addWorkout} className="rounded-xl">
-                  <Plus className="mr-2 h-4 w-4" /> Přidat
-                </Button>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                {recentWorkoutDays.length > 0 ? (
-                  recentWorkoutDays.map((day) => (
-                    <Badge key={day} variant="secondary" className="rounded-full px-3 py-1">
-                      {day}
-                    </Badge>
-                  ))
-                ) : (
-                  <p className="text-sm text-slate-500">Zatím žádný zapsaný trénink.</p>
-                )}
-              </div>
-
-              <div className="space-y-3">
-                {data.workouts.map((w) => (
-                  <div key={w.id} className="flex items-center justify-between rounded-2xl border bg-white p-3">
-                    <div>
-                      <div className="font-medium">{w.type}</div>
-                      <div className="text-sm text-slate-500">{w.date}</div>
-                    </div>
-                    <Button variant="ghost" size="icon" onClick={() => removeWorkout(w.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-2xl shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <Utensils className="h-5 w-5" /> Jídlo a protein
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-3 md:grid-cols-[1fr_2fr_1fr_auto]">
-                <Input type="date" value={foodDate} onChange={(e) => setFoodDate(e.target.value)} />
-                <Input
-                  placeholder="Např. skyr, kuře s rýží, protein shake"
-                  value={foodText}
-                  onChange={(e) => setFoodText(e.target.value)}
-                />
-                <Input
-                  type="number"
-                  placeholder="Protein (g)"
-                  value={foodProtein}
-                  onChange={(e) => setFoodProtein(e.target.value)}
-                />
-                <Button onClick={addFood} className="rounded-xl">
-                  <Plus className="mr-2 h-4 w-4" /> Přidat
-                </Button>
-              </div>
-
-              <div className="space-y-3">
-                {data.foodLog.map((f) => (
-                  <div key={f.id} className="flex items-center justify-between rounded-2xl border bg-white p-3">
-                    <div>
-                      <div className="font-medium">{f.text}</div>
-                      <div className="text-sm text-slate-500">
-                        {f.date} · {f.protein} g proteinu
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="icon" onClick={() => removeFood(f.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <Card className="rounded-2xl shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <CheckSquare2 className="h-5 w-5" /> Co naplánovat na zítra
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-3">
-                <Input
-                  placeholder="Např. koupit skyr, udělat kuře a rýži, připravit svačinu"
-                  value={todoText}
-                  onChange={(e) => setTodoText(e.target.value)}
-                />
-                <Button onClick={addTodo} className="rounded-xl">
-                  <Plus className="mr-2 h-4 w-4" /> Přidat
-                </Button>
-              </div>
-
-              <div className="space-y-3">
-                {data.tomorrowPlan.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between rounded-2xl border bg-white p-3">
-                    <div className="flex items-center gap-3">
-                      <Checkbox checked={item.done} onCheckedChange={() => toggleTodo(item.id)} />
-                      <span className={item.done ? "text-slate-400 line-through" : "text-slate-800"}>
-                        {item.text}
-                      </span>
-                    </div>
-                    <Button variant="ghost" size="icon" onClick={() => removeTodo(item.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-2xl shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-xl">Poznámky</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Textarea
-                value={data.notes}
-                onChange={(e) => setData((prev) => ({ ...prev, notes: e.target.value }))}
-                placeholder="Sem si můžeš psát třeba: váha ráno, jak ses cítil, co koupit, co připravit, jak šel trénink..."
-                className="min-h-[240px]"
-              />
-            </CardContent>
-          </Card>
-        </div>
+    <div class="grid stats">
+      <div class="card">
+        <div class="muted">Tréninky tento týden</div>
+        <div class="big-number" id="weekWorkouts">0</div>
+        <div class="muted">Cíl: 4 tréninky týdně</div>
+      </div>
+      <div class="card">
+        <div class="muted">Protein dnes</div>
+        <div class="big-number"><span id="todayProtein">0</span> g</div>
+        <div class="muted">Součet z jídel za dnešek</div>
+      </div>
+      <div class="card">
+        <div class="muted">Plán na zítra</div>
+        <div class="big-number" id="tomorrowDate">-</div>
+        <div class="muted">Co si připravit a koupit</div>
       </div>
     </div>
-  );
-}
+
+    <div class="grid main">
+      <div class="card">
+        <h2>Tréninky</h2>
+        <div class="row">
+          <input type="date" id="workoutDate" />
+          <select id="workoutType">
+            <option>Push</option>
+            <option>Pull</option>
+            <option>Legs</option>
+            <option>Upper</option>
+            <option>Other</option>
+          </select>
+          <button onclick="addWorkout()">Přidat</button>
+        </div>
+        <div class="muted">Poslední dny v gymu</div>
+        <div class="badge-wrap" id="recentDays"></div>
+        <div class="list" id="workoutList"></div>
+      </div>
+
+      <div class="card">
+        <h2>Jídlo a protein</h2>
+        <div class="row">
+          <input type="date" id="foodDate" />
+          <input type="text" id="foodText" placeholder="Např. skyr, kuře s rýží, protein shake" />
+          <input type="number" id="foodProtein" placeholder="Protein (g)" />
+          <button onclick="addFood()">Přidat</button>
+        </div>
+        <div class="list" id="foodList"></div>
+      </div>
+
+      <div class="card">
+        <h2>Plán na zítra</h2>
+        <div class="row">
+          <input type="text" id="todoText" placeholder="Např. připravit svačinu, koupit skyr, udělat kuře s rýží" />
+          <button onclick="addTodo()">Přidat</button>
+        </div>
+        <div class="list" id="todoList"></div>
+      </div>
+
+      <div class="card">
+        <h2>Poznámky</h2>
+        <textarea id="notes" placeholder="Sem si piš váhu, jak šel trénink, co koupit, co připravit..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'fitness-tracker-single-file-v1';
+
+    function todayStr() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function tomorrowStr() {
+      const d = new Date();
+      d.setDate(d.getDate() + 1);
+      return d.toISOString().slice(0, 10);
+    }
+
+    const defaultData = {
+      workouts: [],
+      foodLog: [],
+      tomorrowPlan: [
+        { id: crypto.randomUUID(), text: 'Připravit svačinu do práce', done: false },
+        { id: crypto.randomUUID(), text: 'Nachystat protein nebo skyr', done: false },
+        { id: crypto.randomUUID(), text: 'Naplánovat oběd na zítra', done: false }
+      ],
+      notes: ''
+    };
+
+    let data = loadData();
+
+    function loadData() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (!saved) return structuredClone(defaultData);
+        return {
+          workouts: saved.workouts || [],
+          foodLog: saved.foodLog || [],
+          tomorrowPlan: saved.tomorrowPlan || structuredClone(defaultData.tomorrowPlan),
+          notes: saved.notes || ''
+        };
+      } catch {
+        return structuredClone(defaultData);
+      }
+    }
+
+    function saveData() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function getWeekWorkoutCount() {
+      const now = new Date();
+      const start = new Date(now);
+      const day = (now.getDay() + 6) % 7;
+      start.setDate(now.getDate() - day);
+      start.setHours(0, 0, 0, 0);
+      return data.workouts.filter(w => new Date(w.date) >= start).length;
+    }
+
+    function getTodayProtein() {
+      return data.foodLog
+        .filter(f => f.date === todayStr())
+        .reduce((sum, item) => sum + (Number(item.protein) || 0), 0);
+    }
+
+    function render() {
+      document.getElementById('weekWorkouts').textContent = getWeekWorkoutCount();
+      document.getElementById('todayProtein').textContent = getTodayProtein();
+      document.getElementById('tomorrowDate').textContent = tomorrowStr();
+
+      document.getElementById('workoutDate').value = todayStr();
+      document.getElementById('foodDate').value = todayStr();
+      document.getElementById('notes').value = data.notes;
+
+      renderRecentDays();
+      renderWorkouts();
+      renderFood();
+      renderTodos();
+      saveData();
+    }
+
+    function renderRecentDays() {
+      const wrap = document.getElementById('recentDays');
+      wrap.innerHTML = '';
+      const uniqueDays = [...new Set(data.workouts.map(w => w.date))].slice(0, 7);
+      if (!uniqueDays.length) {
+        wrap.innerHTML = '<div class="muted">Zatím žádný zapsaný trénink.</div>';
+        return;
+      }
+      uniqueDays.forEach(day => {
+        const badge = document.createElement('div');
+        badge.className = 'badge';
+        badge.textContent = day;
+        wrap.appendChild(badge);
+      });
+    }
+
+    function renderWorkouts() {
+      const list = document.getElementById('workoutList');
+      list.innerHTML = '';
+      data.workouts.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'item';
+        div.innerHTML = `
+          <div class="item-left">
+            <div class="item-text">
+              <div class="item-title">${item.type}</div>
+              <div class="muted">${item.date}</div>
+            </div>
+          </div>
+          <button class="small-btn" onclick="removeWorkout('${item.id}')">Smazat</button>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function renderFood() {
+      const list = document.getElementById('foodList');
+      list.innerHTML = '';
+      data.foodLog.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'item';
+        div.innerHTML = `
+          <div class="item-left">
+            <div class="item-text">
+              <div class="item-title">${item.text}</div>
+              <div class="muted">${item.date} · ${item.protein} g proteinu</div>
+            </div>
+          </div>
+          <button class="small-btn" onclick="removeFood('${item.id}')">Smazat</button>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function renderTodos() {
+      const list = document.getElementById('todoList');
+      list.innerHTML = '';
+      data.tomorrowPlan.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'item';
+        div.innerHTML = `
+          <div class="item-left">
+            <input class="checkbox" type="checkbox" ${item.done ? 'checked' : ''} onchange="toggleTodo('${item.id}')" />
+            <div class="item-text">
+              <div class="item-title ${item.done ? 'done' : ''}">${item.text}</div>
+            </div>
+          </div>
+          <button class="small-btn" onclick="removeTodo('${item.id}')">Smazat</button>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function addWorkout() {
+      const date = document.getElementById('workoutDate').value;
+      const type = document.getElementById('workoutType').value;
+      if (!date) return;
+      data.workouts.unshift({ id: crypto.randomUUID(), date, type });
+      render();
+    }
+
+    function removeWorkout(id) {
+      data.workouts = data.workouts.filter(item => item.id !== id);
+      render();
+    }
+
+    function addFood() {
+      const date = document.getElementById('foodDate').value;
+      const text = document.getElementById('foodText').value.trim();
+      const protein = document.getElementById('foodProtein').value;
+      if (!text) return;
+      data.foodLog.unshift({
+        id: crypto.randomUUID(),
+        date,
+        text,
+        protein: Number(protein) || 0
+      });
+      document.getElementById('foodText').value = '';
+      document.getElementById('foodProtein').value = '';
+      render();
+    }
+
+    function removeFood(id) {
+      data.foodLog = data.foodLog.filter(item => item.id !== id);
+      render();
+    }
+
+    function addTodo() {
+      const text = document.getElementById('todoText').value.trim();
+      if (!text) return;
+      data.tomorrowPlan.push({ id: crypto.randomUUID(), text, done: false });
+      document.getElementById('todoText').value = '';
+      render();
+    }
+
+    function toggleTodo(id) {
+      data.tomorrowPlan = data.tomorrowPlan.map(item =>
+        item.id === id ? { ...item, done: !item.done } : item
+      );
+      render();
+    }
+
+    function removeTodo(id) {
+      data.tomorrowPlan = data.tomorrowPlan.filter(item => item.id !== id);
+      render();
+    }
+
+    document.addEventListener('input', function(e) {
+      if (e.target.id === 'notes') {
+        data.notes = e.target.value;
+        saveData();
+      }
+    });
+
+    render();
+  </script>
+</body>
+</html>
