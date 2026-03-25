@@ -1,255 +1,341 @@
-<!doctype html>
-<html lang="cs">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Lepší tarif za méně | Doporučení</title>
-  <meta name="description" content="Získej výhodnější tarif během pár minut. Klikni, vyplň nezávazný formulář a nech si připravit nejlepší nabídku." />
+import React, { useEffect, useMemo, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { CalendarDays, Dumbbell, Plus, Trash2, Utensils, CheckSquare2 } from "lucide-react";
+import { motion } from "framer-motion";
 
-  <!-- Open Graph / Social -->
-  <meta property="og:title" content="Lepší tarif za méně – nezávazná nabídka" />
-  <meta property="og:description" content="Klikni, vyplň krátký formulář a získej nejvýhodnější tarif. Rychle, zdarma a nezávazně." />
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://xaspi7.github.io/vcelna" />
+const STORAGE_KEY = "adam-fitness-tracker-v1";
 
-  <!-- Vlastní ikona stránky -->
-  <link rel="icon" type="image/png" href="img/5g.png">
-  <link rel="apple-touch-icon" href="img/5g.png">
+const todayStr = () => new Date().toISOString().slice(0, 10);
+const tomorrowStr = () => {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return d.toISOString().slice(0, 10);
+};
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root{
-      --bg: #0f172a;
-      --panel: #111827;
-      --text: #e5e7eb;
-      --muted: #9ca3af;
-      --brand: #22c55e;
-      --brand-600: #16a34a;
-      --ring: rgba(34,197,94,0.25);
-      --warn-bg: #fef3c7;
-      --warn-border: #f59e0b;
-      --warn-text: #92400e;
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      background: radial-gradient(1200px 600px at 80% -10%, rgba(34,197,94,.15), transparent 60%),
-                  radial-gradient(800px 400px at 0% 0%, rgba(59,130,246,.12), transparent 50%),
-                  var(--bg);
-      color:var(--text);
-    }
-    a{color:inherit}
-    .wrap{max-width:1000px;margin:0 auto;padding:24px}
-    header{display:flex;align-items:center;justify-content:space-between;gap:16px}
-    .logo{display:flex;align-items:center;gap:12px;font-weight:700;letter-spacing:.2px}
-    .logo-badge{background:linear-gradient(135deg,#22c55e,#10b981);color:#052e16;padding:8px 10px;border-radius:12px;font-weight:800}
-    nav a{opacity:.9;text-decoration:none;margin-left:16px}
+const defaultState = {
+  workouts: [],
+  foodLog: [],
+  tomorrowPlan: [
+    { id: crypto.randomUUID(), text: "Připravit svačinu do práce", done: false },
+    { id: crypto.randomUUID(), text: "Nachystat protein / skyr", done: false },
+    { id: crypto.randomUUID(), text: "Naplánovat oběd na zítra", done: false },
+  ],
+  notes: "",
+};
 
-    .hero{display:grid;grid-template-columns:1.2fr .8fr;gap:28px;align-items:center;padding:48px 0}
-    .card{background:rgba(17,24,39,.7);border:1px solid rgba(255,255,255,.08);backdrop-filter: blur(6px); border-radius:20px; padding:28px; box-shadow: 0 10px 30px rgba(0,0,0,.25)}
-    .hero h1{font-size:clamp(28px,3.4vw,46px);line-height:1.1;margin:0 0 12px}
-    .hero p.lead{font-size:clamp(16px,2vw,20px);color:var(--muted);margin:0 0 20px}
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return defaultState;
+    const parsed = JSON.parse(raw);
+    return {
+      ...defaultState,
+      ...parsed,
+      workouts: parsed.workouts || [],
+      foodLog: parsed.foodLog || [],
+      tomorrowPlan: parsed.tomorrowPlan || defaultState.tomorrowPlan,
+      notes: parsed.notes || "",
+    };
+  } catch {
+    return defaultState;
+  }
+}
 
-    .highlight-offer{margin:16px 0;padding:14px 16px;background:#dcfce7;border:2px solid #22c55e;border-radius:14px;color:#065f46;font-weight:800;text-align:center;font-size:18px}
+export default function FitnessTrackerApp() {
+  const [data, setData] = useState(defaultState);
+  const [workoutDate, setWorkoutDate] = useState(todayStr());
+  const [workoutType, setWorkoutType] = useState("Push");
+  const [foodDate, setFoodDate] = useState(todayStr());
+  const [foodText, setFoodText] = useState("");
+  const [foodProtein, setFoodProtein] = useState("");
+  const [todoText, setTodoText] = useState("");
 
-    .bullets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0}
-    .chip{display:flex;align-items:center;gap:8px;background:#0b1220;border:1px solid rgba(255,255,255,.08);padding:10px 12px;border-radius:999px;font-size:14px}
+  useEffect(() => {
+    setData(loadState());
+  }, []);
 
-    .cta{display:inline-flex;align-items:center;gap:10px;background:var(--brand);color:#052e16;font-weight:800;text-decoration:none;padding:14px 18px;border-radius:14px;box-shadow:0 8px 18px rgba(34,197,94,.35);
-      transition: transform .06s ease, box-shadow .2s ease;}
-    .cta:hover{transform:translateY(-1px); box-shadow:0 14px 28px rgba(34,197,94,.45)}
-    .cta:focus{outline:3px solid var(--ring)}
-    .cta-secondary{display:inline-flex;align-items:center;gap:10px;font-weight:700;padding:12px 14px;text-decoration:none;border-radius:12px;border:1px solid rgba(255,255,255,.12)}
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }, [data]);
 
-    .aside{font-size:14px;color:var(--muted);margin-top:14px}
+  const addWorkout = () => {
+    const entry = {
+      id: crypto.randomUUID(),
+      date: workoutDate,
+      type: workoutType,
+    };
+    setData((prev) => ({ ...prev, workouts: [entry, ...prev.workouts] }));
+  };
 
-    .steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; margin:36px 0 14px}
-    .step{background:#0b1220;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:18px}
-    .step h3{margin:0 0 6px;font-size:18px}
-    .step p{margin:0;color:var(--muted)}
+  const removeWorkout = (id) => {
+    setData((prev) => ({ ...prev, workouts: prev.workouts.filter((w) => w.id !== id) }));
+  };
 
-    .faq{margin:40px 0}
-    details{background:#0b1220;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;margin-bottom:10px}
-    summary{cursor:pointer;font-weight:700}
-    details p{color:var(--muted);margin:8px 0 0}
+  const addFood = () => {
+    if (!foodText.trim()) return;
+    const entry = {
+      id: crypto.randomUUID(),
+      date: foodDate,
+      text: foodText.trim(),
+      protein: Number(foodProtein) || 0,
+    };
+    setData((prev) => ({ ...prev, foodLog: [entry, ...prev.foodLog] }));
+    setFoodText("");
+    setFoodProtein("");
+  };
 
-    .footer{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:22px 0;color:var(--muted);font-size:14px}
+  const removeFood = (id) => {
+    setData((prev) => ({ ...prev, foodLog: prev.foodLog.filter((f) => f.id !== id) }));
+  };
 
-    .sticky-cta{position:sticky;bottom:16px;display:flex;flex-direction:column;gap:10px;justify-content:center;margin-top:6px}
-    .sticky-cta a{padding:14px 18px}
+  const addTodo = () => {
+    if (!todoText.trim()) return;
+    setData((prev) => ({
+      ...prev,
+      tomorrowPlan: [
+        ...prev.tomorrowPlan,
+        { id: crypto.randomUUID(), text: todoText.trim(), done: false },
+      ],
+    }));
+    setTodoText("");
+  };
 
-    /* Modal */
-    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:16px;z-index:40}
-    .modal{width:min(560px,100%);background:#0b1220;border:1px solid rgba(255,255,255,.1);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.45);padding:20px}
-    .modal h3{margin:0 0 8px;font-size:22px}
-    .modal p{margin:0 0 14px;color:var(--muted)}
-    .modal .callout{margin:10px 0;padding:12px 14px;background:var(--warn-bg);border:2px solid var(--warn-border);border-radius:12px;color:var(--warn-text);font-weight:800;text-align:center;display:flex;flex-direction:column;gap:8px}
-    .modal .row{display:flex;gap:10px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
-    .btn{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:12px;text-decoration:none;font-weight:700;border:1px solid rgba(255,255,255,.12);cursor:pointer}
-    .btn-primary{background:var(--brand);color:#052e16;border-color:transparent}
-    .btn:hover{transform:translateY(-1px)}
+  const toggleTodo = (id) => {
+    setData((prev) => ({
+      ...prev,
+      tomorrowPlan: prev.tomorrowPlan.map((item) =>
+        item.id === id ? { ...item, done: !item.done } : item
+      ),
+    }));
+  };
 
-    @media (max-width:900px){
-      .hero{grid-template-columns:1fr}
-      .bullets{grid-template-columns:1fr 1fr}
-      .steps{grid-template-columns:1fr}
-      nav{display:none}
-    }
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <header>
-      <div class="logo">
-        <span class="logo-badge">Tarif+ </span>
-        <span>Výhodnější tarify snadno</span>
-      </div>
-      <nav>
-        <a href="#jak-to-funguje">Jak to funguje</a>
-        <a href="#faq">Časté dotazy</a>
-      </nav>
-    </header>
+  const removeTodo = (id) => {
+    setData((prev) => ({
+      ...prev,
+      tomorrowPlan: prev.tomorrowPlan.filter((item) => item.id !== id),
+    }));
+  };
 
-    <section class="hero">
-      <div class="card">
-        <h1>Chceš <u>lepší tarif</u> za méně peněz?</h1>
-        <p class="lead">Za pár minut porovnáme nabídky a pošleme tu nejvýhodnější. Zdarma a bez závazků.</p>
+  const todayProtein = useMemo(() => {
+    return data.foodLog
+      .filter((f) => f.date === todayStr())
+      .reduce((sum, item) => sum + (item.protein || 0), 0);
+  }, [data.foodLog]);
 
-        <div class="highlight-offer">🔥 Neomezený balíček (hovory, SMS i data) od pouhých 411,4 Kč</div>
+  const thisWeekWorkouts = useMemo(() => {
+    const now = new Date();
+    const start = new Date(now);
+    const day = (now.getDay() + 6) % 7;
+    start.setDate(now.getDate() - day);
+    start.setHours(0, 0, 0, 0);
 
-        <div class="bullets">
-          <div class="chip">⚡ Rychlé vyřízení</div>
-          <div class="chip">💬 Lidská podpora</div>
-          <div class="chip">💸 Úspora peněz</div>
+    return data.workouts.filter((w) => new Date(w.date) >= start).length;
+  }, [data.workouts]);
+
+  const recentWorkoutDays = useMemo(() => {
+    return [...new Set(data.workouts.map((w) => w.date))].slice(0, 7);
+  }, [data.workouts]);
+
+  return (
+    <div className="min-h-screen bg-slate-50 p-4 md:p-8">
+      <div className="mx-auto max-w-7xl space-y-6">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="grid gap-4 md:grid-cols-3"
+        >
+          <Card className="rounded-2xl shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Dumbbell className="h-5 w-5" /> Tréninky tento týden
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{thisWeekWorkouts}</div>
+              <p className="mt-1 text-sm text-slate-500">Cíl: 4 tréninky týdně</p>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-2xl shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Utensils className="h-5 w-5" /> Protein dnes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{todayProtein} g</div>
+              <p className="mt-1 text-sm text-slate-500">Průběžný součet z jídel</p>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-2xl shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <CalendarDays className="h-5 w-5" /> Zítřejší plán
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{tomorrowStr()}</div>
+              <p className="mt-1 text-sm text-slate-500">Checklist jídel a přípravy</p>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card className="rounded-2xl shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <Dumbbell className="h-5 w-5" /> Trackování tréninků
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+                <Input type="date" value={workoutDate} onChange={(e) => setWorkoutDate(e.target.value)} />
+                <select
+                  value={workoutType}
+                  onChange={(e) => setWorkoutType(e.target.value)}
+                  className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
+                >
+                  <option>Push</option>
+                  <option>Pull</option>
+                  <option>Legs</option>
+                  <option>Upper</option>
+                  <option>Other</option>
+                </select>
+                <Button onClick={addWorkout} className="rounded-xl">
+                  <Plus className="mr-2 h-4 w-4" /> Přidat
+                </Button>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {recentWorkoutDays.length > 0 ? (
+                  recentWorkoutDays.map((day) => (
+                    <Badge key={day} variant="secondary" className="rounded-full px-3 py-1">
+                      {day}
+                    </Badge>
+                  ))
+                ) : (
+                  <p className="text-sm text-slate-500">Zatím žádný zapsaný trénink.</p>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                {data.workouts.map((w) => (
+                  <div key={w.id} className="flex items-center justify-between rounded-2xl border bg-white p-3">
+                    <div>
+                      <div className="font-medium">{w.type}</div>
+                      <div className="text-sm text-slate-500">{w.date}</div>
+                    </div>
+                    <Button variant="ghost" size="icon" onClick={() => removeWorkout(w.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-2xl shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <Utensils className="h-5 w-5" /> Jídlo a protein
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-3 md:grid-cols-[1fr_2fr_1fr_auto]">
+                <Input type="date" value={foodDate} onChange={(e) => setFoodDate(e.target.value)} />
+                <Input
+                  placeholder="Např. skyr, kuře s rýží, protein shake"
+                  value={foodText}
+                  onChange={(e) => setFoodText(e.target.value)}
+                />
+                <Input
+                  type="number"
+                  placeholder="Protein (g)"
+                  value={foodProtein}
+                  onChange={(e) => setFoodProtein(e.target.value)}
+                />
+                <Button onClick={addFood} className="rounded-xl">
+                  <Plus className="mr-2 h-4 w-4" /> Přidat
+                </Button>
+              </div>
+
+              <div className="space-y-3">
+                {data.foodLog.map((f) => (
+                  <div key={f.id} className="flex items-center justify-between rounded-2xl border bg-white p-3">
+                    <div>
+                      <div className="font-medium">{f.text}</div>
+                      <div className="text-sm text-slate-500">
+                        {f.date} · {f.protein} g proteinu
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="icon" onClick={() => removeFood(f.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        <div style="display:flex;gap:12px;flex-wrap:wrap" id="cta">
-          <a class="cta open-modal" data-href="https://docs.google.com/forms/d/e/1FAIpQLSde5XH9y6DcrJezIqFyDUSZrD-vAiFet6_nlNz4pg_MDQnT4A/viewform" href="#">Vyplnit nezávazný formulář</a>
-          <a class="cta-secondary" href="#jak-to-funguje">Jak to funguje?</a>
+        <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+          <Card className="rounded-2xl shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <CheckSquare2 className="h-5 w-5" /> Co naplánovat na zítra
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-3">
+                <Input
+                  placeholder="Např. koupit skyr, udělat kuře a rýži, připravit svačinu"
+                  value={todoText}
+                  onChange={(e) => setTodoText(e.target.value)}
+                />
+                <Button onClick={addTodo} className="rounded-xl">
+                  <Plus className="mr-2 h-4 w-4" /> Přidat
+                </Button>
+              </div>
+
+              <div className="space-y-3">
+                {data.tomorrowPlan.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between rounded-2xl border bg-white p-3">
+                    <div className="flex items-center gap-3">
+                      <Checkbox checked={item.done} onCheckedChange={() => toggleTodo(item.id)} />
+                      <span className={item.done ? "text-slate-400 line-through" : "text-slate-800"}>
+                        {item.text}
+                      </span>
+                    </div>
+                    <Button variant="ghost" size="icon" onClick={() => removeTodo(item.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-2xl shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-xl">Poznámky</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Textarea
+                value={data.notes}
+                onChange={(e) => setData((prev) => ({ ...prev, notes: e.target.value }))}
+                placeholder="Sem si můžeš psát třeba: váha ráno, jak ses cítil, co koupit, co připravit, jak šel trénink..."
+                className="min-h-[240px]"
+              />
+            </CardContent>
+          </Card>
         </div>
-
-        <p class="aside">Tip: Do kolonky <b>„Doporučitel“</b> uveď prosím <b>Adam Šanda</b>, a do <b>„OKU kód“</b> napiš <b>zjistíte si sami</b>.</p>
-      </div>
-
-      <div class="card" aria-label="ilustrace">
-        <div style="display:grid;gap:16px">
-          <div style="display:flex;gap:10px;align-items:center"><span>✓</span><div>
-            <div style="font-weight:700">Nezávazně</div>
-            <div style="color:var(--muted);font-size:14px">Formulář jen ověří možnosti a připraví cenovou nabídku.</div>
-          </div></div>
-          <div style="display:flex;gap:10px;align-items:center"><span>✓</span><div>
-            <div style="font-weight:700">Bez starostí</div>
-            <div style="color:var(--muted);font-size:14px">Pomůžeme s přechodem i zachováním čísla.</div>
-          </div></div>
-          <div style="display:flex;gap:10px;align-items:center"><span>✓</span><div>
-            <div style="font-weight:700">Transparentně</div>
-            <div style="color:var(--muted);font-size:14px">Žádné skryté poplatky – jasné podmínky předem.</div>
-          </div></div>
-        </div>
-      </div>
-    </section>
-
-    <section id="jak-to-funguje">
-      <h2>Jak to funguje</h2>
-      <div class="steps">
-        <div class="step">
-          <h3>1) Klikni na formulář</h3>
-          <p>Otevře se bezpečný Google Form. Zabere to 1–2 minuty.</p>
-        </div>
-        <div class="step">
-          <h3>2) Uveď „Doporučitel“ + OKU kód</h3>
-          <p>Do kolonky napiš <b>Adam Šanda</b>.  
-          OKU kód si zjistíte sami u T-Mobile (uveďte: <b>zjistíte si sami</b>).</p>
-        </div>
-        <div class="step">
-          <h3>3) Dostaneš nabídku</h3>
-          <p>Partner ti pošle nejlepší tarif podle tvých potřeb. Rozhodnutí je na tobě.</p>
-        </div>
-      </div>
-      <div class="sticky-cta">
-        <a class="cta open-modal" href="#" data-href="https://docs.google.com/forms/d/e/1FAIpQLSde5XH9y6DcrJezIqFyDUSZrD-vAiFet6_nlNz4pg_MDQnT4A/viewform">Chci lepší tarif</a>
-      </div>
-    </section>
-
-    <section class="faq" id="faq">
-      <h2>Časté dotazy</h2>
-      <details>
-        <summary>Je to opravdu nezávazné?</summary>
-        <p>Ano. Vyplnění slouží k přípravě nabídky. Službu si objednáš pouze pokud ti podmínky sednou.</p>
-      </details>
-      <details>
-        <summary>Kdo zpracovává formulář?</summary>
-        <p>Formulář běží na Google Forms a je spravován poskytovatelem tarifů. Tento web sám o sobě žádná citlivá data neshromažďuje.</p>
-      </details>
-      <details>
-        <summary>Přenesu si číslo k novému operátorovi?</summary>
-        <p>Ano, přenos čísla je běžná věc. Partner s ním pomůže a hlídá termíny, aby nedošlo k výpadku služeb.</p>
-      </details>
-    </section>
-
-    <footer class="footer">
-      <div>© <span id="year"></span> Tarif+ – nezávazné doporučení</div>
-    </footer>
-  </div>
-
-  <!-- Modal overlay -->
-  <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalDesc">
-    <div class="modal">
-      <h3 id="modalTitle">Ještě drobnost před odesláním</h3>
-      <p id="modalDesc">Ať se sleva správně spáruje:</p>
-      <div class="callout">
-        ✍️ Do kolonky <b>„Doporučitel“</b> napiš: <b id="refName">Adam Šanda</b>
-        <button id="copyBtn" class="btn" type="button">📋 Kopírovat</button>
-        <div>ℹ️ Do pole <b>„OKU kód“</b> napiš: <b>zjistíte si sami</b></div>
-      </div>
-      <div class="row">
-        <button class="btn" id="closeModal" type="button">Zpět</button>
-        <a class="btn btn-primary" id="continueBtn" href="#" target="_blank" rel="noopener nofollow">Pokračovat na formulář</a>
       </div>
     </div>
-  </div>
-
-  <script>
-    // Nastav aktuální rok
-    document.getElementById('year').textContent = new Date().getFullYear();
-
-    // Modal logika
-    const backdrop = document.getElementById('modalBackdrop');
-    const continueBtn = document.getElementById('continueBtn');
-    const closeBtn = document.getElementById('closeModal');
-
-    function openModal(url){
-      continueBtn.setAttribute('href', url);
-      backdrop.style.display = 'flex';
-    }
-    function closeModal(){
-      backdrop.style.display = 'none';
-    }
-
-    document.querySelectorAll('.open-modal').forEach(el => {
-      el.addEventListener('click', (e) => {
-        e.preventDefault();
-        const url = el.getAttribute('data-href');
-        openModal(url);
-      });
-    });
-    closeBtn.addEventListener('click', closeModal);
-    backdrop.addEventListener('click', (e) => { if(e.target === backdrop) closeModal(); });
-    document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeModal(); });
-
-    // Copy button logika
-    const copyBtn = document.getElementById("copyBtn");
-    const refName = document.getElementById("refName").innerText;
-
-    copyBtn.addEventListener("click", () => {
-      navigator.clipboard.writeText(refName).then(() => {
-        copyBtn.textContent = "✅ Zkopírováno!";
-        setTimeout(() => copyBtn.textContent = "📋 Kopírovat", 2000);
-      });
-    });
-  </script>
-</body>
-</html>
+  );
+}
