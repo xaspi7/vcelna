@@ -145,6 +145,76 @@
       border-radius: 999px;
       font-size: 13px;
     }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+    }
+    .calendar-head {
+      text-align: center;
+      font-size: 13px;
+      color: #6b7280;
+      font-weight: 700;
+      padding: 6px 0;
+    }
+    .calendar-day {
+      min-height: 86px;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 10px;
+      background: #fff;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: 0.15s ease;
+    }
+    .calendar-day:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+    }
+    .calendar-day.muted-day {
+      background: #f9fafb;
+      color: #9ca3af;
+    }
+    .calendar-day.today {
+      border: 2px solid #111827;
+    }
+    .calendar-day.has-workout {
+      background: #dcfce7;
+      border-color: #86efac;
+    }
+    .calendar-day-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .calendar-tag {
+      font-size: 11px;
+      padding: 4px 7px;
+      border-radius: 999px;
+      background: #111827;
+      color: white;
+      align-self: flex-start;
+    }
+    .calendar-empty {
+      visibility: hidden;
+    }
+    @media (max-width: 700px) {
+      .calendar-grid {
+        gap: 6px;
+      }
+      .calendar-day {
+        min-height: 70px;
+        padding: 8px;
+      }
+      .calendar-tag {
+        font-size: 10px;
+        padding: 3px 6px;
+      }
+    }
     @media (max-width: 640px) {
       .container { padding: 16px; }
       h1 { font-size: 26px; }
@@ -175,7 +245,17 @@
 
     <div class="grid main">
       <div class="card">
-        <h2>Tréninky</h2>
+        <h2>Tréninkový kalendář</h2>
+        <div class="muted" style="margin-bottom:14px;">Klikni na den a zapiš, jestli jsi byl v gymu. Tohle je hlavní přehled.</div>
+        <div class="row" style="align-items:center; margin-bottom: 10px;">
+          <button onclick="changeMonth(-1)">Předchozí</button>
+          <div style="flex:2; text-align:center; font-weight:700;" id="calendarTitle"></div>
+          <button onclick="changeMonth(1)">Další</button>
+        </div>
+        <div id="calendar"></div>
+
+        <div style="height:18px"></div>
+        <h2 style="font-size:18px; margin-bottom:10px;">Ruční přidání tréninku</h2>
         <div class="row">
           <input type="date" id="workoutDate" />
           <select id="workoutType">
@@ -231,6 +311,9 @@
       d.setDate(d.getDate() + 1);
       return d.toISOString().slice(0, 10);
     }
+
+    let currentMonth = new Date().getMonth();
+    let currentYear = new Date().getFullYear();
 
     const defaultData = {
       workouts: [],
@@ -288,11 +371,85 @@
       document.getElementById('foodDate').value = todayStr();
       document.getElementById('notes').value = data.notes;
 
+      renderCalendar();
       renderRecentDays();
       renderWorkouts();
       renderFood();
       renderTodos();
       saveData();
+    }
+
+    function getWorkoutForDate(dateStr) {
+      return data.workouts.find(w => w.date === dateStr);
+    }
+
+    function renderCalendar() {
+      const names = ['Leden', 'Únor', 'Březen', 'Duben', 'Květen', 'Červen', 'Červenec', 'Srpen', 'Září', 'Říjen', 'Listopad', 'Prosinec'];
+      const dayNames = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
+      document.getElementById('calendarTitle').textContent = names[currentMonth] + ' ' + currentYear;
+
+      const firstDay = new Date(currentYear, currentMonth, 1);
+      const lastDay = new Date(currentYear, currentMonth + 1, 0);
+      const startOffset = (firstDay.getDay() + 6) % 7;
+      const totalDays = lastDay.getDate();
+      const today = todayStr();
+
+      let html = '<div class="calendar-grid">';
+      dayNames.forEach(name => {
+        html += '<div class="calendar-head">' + name + '</div>';
+      });
+
+      for (let i = 0; i < startOffset; i++) {
+        html += '<div class="calendar-day calendar-empty"></div>';
+      }
+
+      for (let day = 1; day <= totalDays; day++) {
+        const dateObj = new Date(currentYear, currentMonth, day);
+        const dateStr = dateObj.toISOString().slice(0, 10);
+        const workout = getWorkoutForDate(dateStr);
+        const classes = ['calendar-day'];
+        if (dateStr === today) classes.push('today');
+        if (workout) classes.push('has-workout');
+
+        html += '<div class="' + classes.join(' ') + '" onclick="quickAddWorkout(\'' + dateStr + '\')">';
+        html += '<div class="calendar-day-top"><span>' + day + '</span></div>';
+        html += workout
+          ? '<div class="calendar-tag">' + workout.type + '</div>'
+          : '<div class="muted">Přidat trénink</div>';
+        html += '</div>';
+      }
+
+      html += '</div>';
+      document.getElementById('calendar').innerHTML = html;
+    }
+
+    function quickAddWorkout(dateStr) {
+      const existing = getWorkoutForDate(dateStr);
+      if (existing) {
+        const remove = confirm('Pro ' + dateStr + ' už máš zapsaný trénink (' + existing.type + '). Chceš ho smazat?');
+        if (remove) {
+          removeWorkout(existing.id);
+        }
+        return;
+      }
+      const type = prompt('Jaký trénink chceš zapsat pro ' + dateStr + '?
+Napiš třeba Push, Pull, Legs, Upper...', 'Push');
+      if (!type) return;
+      data.workouts.unshift({ id: crypto.randomUUID(), date: dateStr, type: type.trim() || 'Workout' });
+      render();
+    }
+
+    function changeMonth(direction) {
+      currentMonth += direction;
+      if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear -= 1;
+      }
+      if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear += 1;
+      }
+      renderCalendar();
     }
 
     function renderRecentDays() {
