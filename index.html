@@ -1,592 +1,2293 @@
-<!DOCTYPE html>
-<html lang="cs">
+<!doctype html>
+<html lang="cs" data-theme="dark">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Fitness tracker</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>Single‑File Command Center</title>
   <style>
+    :root {
+      --bg: #080b12;
+      --bg-2: #0d1321;
+      --surface: rgba(255,255,255,.075);
+      --surface-2: rgba(255,255,255,.11);
+      --surface-3: rgba(255,255,255,.16);
+      --text: #eef4ff;
+      --muted: #aebbd2;
+      --muted-2: #7f8ba3;
+      --line: rgba(255,255,255,.14);
+      --accent: #7c5cff;
+      --accent-2: #19d3ff;
+      --accent-3: #58f29f;
+      --danger: #ff6b86;
+      --warning: #ffd166;
+      --shadow: 0 24px 90px rgba(0,0,0,.45);
+      --radius-lg: 32px;
+      --radius-md: 20px;
+      --radius-sm: 14px;
+      --container: 1180px;
+      --header-h: 74px;
+      --font: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+
+    [data-theme="light"] {
+      --bg: #f6f8ff;
+      --bg-2: #ffffff;
+      --surface: rgba(10, 20, 42, .06);
+      --surface-2: rgba(10, 20, 42, .095);
+      --surface-3: rgba(10, 20, 42, .14);
+      --text: #101827;
+      --muted: #536071;
+      --muted-2: #6d7889;
+      --line: rgba(20, 36, 62, .14);
+      --accent: #5d4dff;
+      --accent-2: #007da7;
+      --accent-3: #0f9f63;
+      --danger: #d83d5c;
+      --warning: #b97700;
+      --shadow: 0 24px 70px rgba(49, 62, 96, .18);
+    }
+
     * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
     body {
       margin: 0;
-      font-family: Arial, Helvetica, sans-serif;
-      background: #f4f6f8;
-      color: #1f2937;
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 20% 10%, rgba(124,92,255,.22), transparent 34vw),
+        radial-gradient(circle at 80% 0%, rgba(25,211,255,.17), transparent 30vw),
+        radial-gradient(circle at 55% 70%, rgba(88,242,159,.10), transparent 38vw),
+        linear-gradient(145deg, var(--bg), var(--bg-2));
+      font-family: var(--font);
+      line-height: 1.5;
+      overflow-x: hidden;
     }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+      background-image:
+        linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,.75), transparent 90%);
+    }
+
+    a { color: inherit; text-decoration: none; }
+    button, input, textarea, select { font: inherit; }
+    button { color: inherit; }
+    img, svg, canvas { display: block; max-width: 100%; }
+    ::selection { background: rgba(124,92,255,.45); color: white; }
+
+    .skip-link {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 200;
+      transform: translateY(-140%);
+      padding: .75rem 1rem;
+      border-radius: 999px;
+      background: var(--text);
+      color: var(--bg);
+      transition: transform .2s ease;
+    }
+    .skip-link:focus { transform: translateY(0); }
+
+    #spaceCanvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -2;
+      opacity: .62;
+    }
+
+    .scroll-progress {
+      position: fixed;
+      inset: 0 auto auto 0;
+      height: 3px;
+      width: 0;
+      z-index: 120;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2), var(--accent-3));
+      box-shadow: 0 0 22px rgba(124,92,255,.8);
+    }
+
     .container {
-      max-width: 1100px;
+      width: min(var(--container), calc(100vw - 32px));
       margin: 0 auto;
-      padding: 24px;
     }
-    h1 {
-      margin: 0 0 20px;
-      font-size: 32px;
-    }
-    h2 {
-      margin: 0 0 14px;
-      font-size: 22px;
-    }
-    .grid {
-      display: grid;
-      gap: 20px;
-    }
-    .stats {
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      margin-bottom: 20px;
-    }
-    .main {
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    }
-    .card {
-      background: white;
-      border-radius: 18px;
-      padding: 20px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.06);
-    }
-    .big-number {
-      font-size: 34px;
-      font-weight: 700;
-      margin: 8px 0 4px;
-    }
-    .muted {
-      color: #6b7280;
-      font-size: 14px;
-    }
-    .row {
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 90;
+      min-height: var(--header-h);
       display: flex;
-      gap: 10px;
+      align-items: center;
+      backdrop-filter: blur(24px);
+      border-bottom: 1px solid transparent;
+      transition: border-color .25s ease, background .25s ease, box-shadow .25s ease;
+    }
+    .site-header.is-scrolled {
+      background: color-mix(in oklab, var(--bg) 76%, transparent);
+      border-color: var(--line);
+      box-shadow: 0 18px 60px rgba(0,0,0,.18);
+    }
+    .header-inner {
+      width: min(var(--container), calc(100vw - 32px));
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      letter-spacing: -.04em;
+      white-space: nowrap;
+    }
+    .brand-mark {
+      width: 40px;
+      height: 40px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 18px 36px rgba(124,92,255,.28);
+    }
+    .brand-mark svg { width: 22px; height: 22px; }
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 6px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--surface);
+    }
+    .nav a {
+      position: relative;
+      padding: .66rem .9rem;
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: .93rem;
+      transition: color .2s ease, background .2s ease;
+    }
+    .nav a:hover, .nav a:focus-visible, .nav a.active {
+      color: var(--text);
+      background: var(--surface-2);
+      outline: none;
+    }
+    .header-actions { display: flex; align-items: center; gap: 10px; }
+    .icon-button, .btn {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      border-radius: 999px;
+      min-height: 42px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: .55rem;
+      cursor: pointer;
+      transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
+    }
+    .icon-button { width: 42px; padding: 0; }
+    .btn { padding: .75rem 1rem; font-weight: 750; }
+    .btn:hover, .icon-button:hover, .btn:focus-visible, .icon-button:focus-visible {
+      transform: translateY(-1px);
+      border-color: color-mix(in oklab, var(--accent) 62%, var(--line));
+      background: var(--surface-2);
+      outline: none;
+    }
+    .btn.primary {
+      color: white;
+      border: 0;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 18px 38px rgba(124,92,255,.22);
+    }
+    .btn.ghost { background: transparent; }
+    .btn.small { min-height: 34px; padding: .48rem .7rem; font-size: .86rem; }
+    .menu-button { display: none; }
+
+    main { position: relative; z-index: 1; }
+    section { scroll-margin-top: 92px; }
+    .section-pad { padding: 90px 0; }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      color: var(--accent-3);
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      font-size: .78rem;
+    }
+    .eyebrow::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 99px;
+      background: var(--accent-3);
+      box-shadow: 0 0 18px var(--accent-3);
+    }
+    .section-title {
+      margin: .65rem 0 1rem;
+      font-size: clamp(2rem, 5vw, 4.6rem);
+      line-height: .95;
+      letter-spacing: -.07em;
+    }
+    .section-lede {
+      margin: 0;
+      max-width: 720px;
+      color: var(--muted);
+      font-size: clamp(1.02rem, 2vw, 1.18rem);
+    }
+
+    .hero {
+      min-height: calc(100vh - var(--header-h));
+      display: grid;
+      align-items: center;
+      padding: 68px 0 92px;
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.02fr) minmax(320px, .8fr);
+      align-items: center;
+      gap: 48px;
+    }
+    .hero h1 {
+      margin: 0;
+      max-width: 880px;
+      font-size: clamp(3rem, 8vw, 7.8rem);
+      line-height: .86;
+      letter-spacing: -.09em;
+    }
+    .gradient-text {
+      background: linear-gradient(135deg, var(--text), var(--accent-2) 44%, var(--accent-3));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .hero p {
+      margin: 1.35rem 0 0;
+      max-width: 680px;
+      color: var(--muted);
+      font-size: clamp(1.08rem, 2vw, 1.3rem);
+    }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 2rem; }
+    .hero-meta {
+      display: flex;
       flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 1.6rem;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .56rem .78rem;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--muted);
+      font-size: .92rem;
+    }
+    .pulse-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--accent-3);
+      box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent-3) 48%, transparent);
+      animation: pulse 1.8s infinite;
+    }
+    @keyframes pulse {
+      70% { box-shadow: 0 0 0 12px transparent; }
+      100% { box-shadow: 0 0 0 0 transparent; }
+    }
+
+    .hero-card {
+      position: relative;
+      isolation: isolate;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: linear-gradient(180deg, var(--surface-2), var(--surface));
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .hero-card::before {
+      content: "";
+      position: absolute;
+      inset: -40% -20% auto auto;
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(25,211,255,.35), transparent 68%);
+      z-index: -1;
+    }
+    .hero-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 18px 18px 0;
+    }
+    .window-dots { display: flex; gap: 7px; }
+    .window-dots span {
+      width: 10px; height: 10px; border-radius: 999px; background: var(--surface-3);
+    }
+    .live-badge {
+      padding: .45rem .65rem;
+      border-radius: 999px;
+      color: var(--accent-3);
+      background: color-mix(in oklab, var(--accent-3) 12%, transparent);
+      border: 1px solid color-mix(in oklab, var(--accent-3) 26%, transparent);
+      font-size: .82rem;
+      font-weight: 800;
+    }
+    .orbital {
+      position: relative;
+      margin: 20px auto 0;
+      width: min(360px, 82vw);
+      aspect-ratio: 1;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+    }
+    .orbit-ring {
+      position: absolute;
+      inset: 12%;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      animation: spin 20s linear infinite;
+    }
+    .orbit-ring:nth-child(2) { inset: 24%; animation-duration: 15s; animation-direction: reverse; }
+    .orbit-ring:nth-child(3) { inset: 36%; animation-duration: 10s; }
+    .orbit-ring::before {
+      content: "";
+      position: absolute;
+      top: -5px;
+      left: 50%;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent-2);
+      box-shadow: 0 0 24px var(--accent-2);
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .orbital-core {
+      width: 126px;
+      height: 126px;
+      border-radius: 40px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 30px 90px rgba(124,92,255,.42);
+    }
+    .orbital-core svg { width: 54px; height: 54px; }
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      margin-top: 20px;
+      border-top: 1px solid var(--line);
+      background: var(--line);
+    }
+    .hero-stat {
+      padding: 18px;
+      background: color-mix(in oklab, var(--bg-2) 72%, transparent);
+    }
+    .hero-stat strong { display: block; font-size: 1.55rem; letter-spacing: -.04em; }
+    .hero-stat span { color: var(--muted); font-size: .86rem; }
+
+    .feature-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-top: -38px;
+      position: relative;
+      z-index: 2;
+    }
+    .mini-card, .panel {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: linear-gradient(180deg, var(--surface-2), var(--surface));
+      box-shadow: 0 18px 70px rgba(0,0,0,.12);
+    }
+    .mini-card {
+      padding: 18px;
+      min-height: 142px;
+    }
+    .mini-card .icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      background: var(--surface-2);
       margin-bottom: 14px;
     }
-    input, select, textarea, button {
-      font: inherit;
+    .mini-card h3 { margin: 0 0 .35rem; font-size: 1rem; }
+    .mini-card p { margin: 0; color: var(--muted); font-size: .92rem; }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(300px, .8fr);
+      gap: 18px;
+      margin-top: 32px;
+      align-items: start;
     }
-    input, select, textarea {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid #d1d5db;
-      border-radius: 10px;
-      background: white;
+    .panel {
+      overflow: clip;
     }
-    textarea {
-      min-height: 180px;
-      resize: vertical;
-    }
-    .row > * {
-      flex: 1;
-      min-width: 120px;
-    }
-    button {
-      border: none;
-      background: #111827;
-      color: white;
-      padding: 10px 16px;
-      border-radius: 10px;
-      cursor: pointer;
-      min-width: 110px;
-    }
-    button:hover {
-      background: #000;
-    }
-    .list {
+    .panel-header {
       display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-top: 12px;
-    }
-    .item {
-      display: flex;
+      align-items: start;
       justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      padding: 12px;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      background: #fafafa;
+      gap: 16px;
+      padding: 20px 20px 0;
     }
-    .item-left {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      flex: 1;
+    .panel-title { margin: 0; font-size: 1.15rem; letter-spacing: -.02em; }
+    .panel-subtitle { margin: .25rem 0 0; color: var(--muted); font-size: .92rem; }
+    .panel-body { padding: 20px; }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-top: 28px;
     }
-    .item-text {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
+    .kpi {
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: var(--surface);
     }
-    .item-title {
-      font-weight: 600;
-    }
-    .small-btn {
-      background: #dc2626;
-      min-width: auto;
-      padding: 8px 12px;
-    }
-    .small-btn:hover {
-      background: #b91c1c;
-    }
-    .checkbox {
-      width: 18px;
-      height: 18px;
-    }
-    .done {
-      text-decoration: line-through;
-      color: #9ca3af;
-    }
-    .badge-wrap {
+    .kpi span { color: var(--muted); font-size: .86rem; }
+    .kpi strong { display: block; margin-top: 4px; font-size: 1.8rem; letter-spacing: -.06em; }
+    .kpi small { color: var(--accent-3); font-weight: 800; }
+
+    .toolbar {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 10px;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 14px;
     }
-    .badge {
-      background: #e5e7eb;
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-size: 13px;
-    }
-    .calendar-grid {
+    .field {
       display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 8px;
+      gap: 7px;
+      min-width: 0;
     }
-    .calendar-head {
-      text-align: center;
-      font-size: 13px;
-      color: #6b7280;
-      font-weight: 700;
-      padding: 6px 0;
-    }
-    .calendar-day {
-      min-height: 86px;
-      border: 1px solid #e5e7eb;
+    label { color: var(--muted); font-size: .82rem; font-weight: 750; }
+    input, textarea, select {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid var(--line);
       border-radius: 14px;
-      padding: 10px;
-      background: #fff;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      transition: 0.15s ease;
+      background: color-mix(in oklab, var(--surface) 82%, transparent);
+      color: var(--text);
+      padding: .72rem .82rem;
+      outline: none;
+      transition: border-color .18s ease, background .18s ease, box-shadow .18s ease;
     }
-    .calendar-day:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+    textarea { min-height: 150px; resize: vertical; }
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--accent-2);
+      box-shadow: 0 0 0 4px color-mix(in oklab, var(--accent-2) 18%, transparent);
+      background: var(--surface-2);
     }
-    .calendar-day.muted-day {
-      background: #f9fafb;
-      color: #9ca3af;
+    select option { background: var(--bg-2); color: var(--text); }
+    .task-form {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr .45fr .55fr auto;
+      gap: 10px;
+      align-items: end;
+      margin-bottom: 18px;
     }
-    .calendar-day.today {
-      border: 2px solid #111827;
+    .task-form .btn { min-height: 42px; }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
     }
-    .calendar-day.has-workout {
-      background: #dcfce7;
-      border-color: #86efac;
+    .task-column {
+      min-height: 360px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: color-mix(in oklab, var(--surface) 78%, transparent);
+      padding: 12px;
+      transition: border-color .18s ease, background .18s ease;
     }
-    .calendar-day-top {
+    .task-column.drag-over {
+      border-color: var(--accent-2);
+      background: color-mix(in oklab, var(--accent-2) 9%, var(--surface));
+    }
+    .column-head {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 14px;
-      font-weight: 700;
+      gap: 8px;
+      margin-bottom: 12px;
+      color: var(--muted);
+      font-size: .86rem;
+      font-weight: 850;
+      text-transform: uppercase;
+      letter-spacing: .06em;
     }
-    .calendar-tag {
-      font-size: 11px;
-      padding: 4px 7px;
+    .count-badge {
+      min-width: 26px;
+      height: 26px;
+      border-radius: 99px;
+      display: inline-grid;
+      place-items: center;
+      background: var(--surface-2);
+      color: var(--text);
+      font-size: .8rem;
+    }
+    .task-list { display: grid; gap: 10px; }
+    .task-card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 12px;
+      background: color-mix(in oklab, var(--bg-2) 70%, transparent);
+      cursor: grab;
+      transition: transform .18s ease, border-color .18s ease, background .18s ease, opacity .18s ease;
+    }
+    .task-card:active { cursor: grabbing; }
+    .task-card.dragging { opacity: .45; transform: scale(.98); }
+    .task-card:hover { border-color: color-mix(in oklab, var(--accent) 46%, var(--line)); }
+    .task-card h4 { margin: 0 0 4px; font-size: .98rem; }
+    .task-card p { margin: 0 0 10px; color: var(--muted); font-size: .88rem; }
+    .task-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .36rem .5rem;
       border-radius: 999px;
-      background: #111827;
-      color: white;
-      align-self: flex-start;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: .76rem;
+      font-weight: 800;
+      white-space: nowrap;
     }
-    .calendar-empty {
-      visibility: hidden;
+    .priority-high { color: var(--danger); background: color-mix(in oklab, var(--danger) 10%, transparent); }
+    .priority-medium { color: var(--warning); background: color-mix(in oklab, var(--warning) 10%, transparent); }
+    .priority-low { color: var(--accent-3); background: color-mix(in oklab, var(--accent-3) 10%, transparent); }
+    .card-actions { display: flex; gap: 6px; }
+    .card-actions button {
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      cursor: pointer;
     }
-    @media (max-width: 700px) {
-      .calendar-grid {
-        gap: 6px;
-      }
-      .calendar-day {
-        min-height: 70px;
-        padding: 8px;
-      }
-      .calendar-tag {
-        font-size: 10px;
-        padding: 3px 6px;
-      }
+    .empty-state {
+      padding: 28px 12px;
+      color: var(--muted-2);
+      text-align: center;
+      border: 1px dashed var(--line);
+      border-radius: 14px;
+      font-size: .9rem;
     }
-    @media (max-width: 640px) {
-      .container { padding: 16px; }
-      h1 { font-size: 26px; }
+
+    .goal-list { display: grid; gap: 14px; }
+    .goal-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+    .goal-row output { font-weight: 900; color: var(--accent-2); }
+    input[type="range"] {
+      grid-column: 1 / -1;
+      padding: 0;
+      min-height: auto;
+      accent-color: var(--accent);
+    }
+    .chart-wrap {
+      margin-top: 18px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--surface);
+      padding: 12px;
+    }
+    #strategyChart { width: 100%; height: 240px; }
+
+    .split-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(300px, .82fr);
+      gap: 18px;
+      margin-top: 32px;
+      align-items: start;
+    }
+    .note-grid { display: grid; gap: 12px; }
+    .note-preview {
+      min-height: 248px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--surface);
+      overflow: auto;
+    }
+    .note-preview h2, .note-preview h3 { margin: .4rem 0 .6rem; letter-spacing: -.03em; }
+    .note-preview p { margin: .5rem 0; color: var(--muted); }
+    .note-preview code {
+      padding: .12rem .32rem;
+      border-radius: 6px;
+      background: var(--surface-2);
+      font-family: var(--mono);
+      font-size: .9em;
+    }
+    .note-footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      color: var(--muted);
+      font-size: .88rem;
+    }
+
+    .timeline {
+      position: relative;
+      display: grid;
+      gap: 14px;
+      margin-top: 32px;
+    }
+    .timeline::before {
+      content: "";
+      position: absolute;
+      left: 18px;
+      top: 18px;
+      bottom: 18px;
+      width: 2px;
+      background: var(--line);
+    }
+    .timeline-item {
+      position: relative;
+      padding: 18px 18px 18px 58px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: var(--surface);
+    }
+    .timeline-item::before {
+      content: "";
+      position: absolute;
+      left: 10px;
+      top: 22px;
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 0 0 8px color-mix(in oklab, var(--accent) 16%, transparent);
+    }
+    .timeline-item h3 { margin: 0 0 .35rem; }
+    .timeline-item p { margin: 0; color: var(--muted); }
+
+    .tabs {
+      margin-top: 32px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      overflow: hidden;
+    }
+    .tab-buttons {
+      display: flex;
+      gap: 1px;
+      background: var(--line);
+      overflow-x: auto;
+    }
+    .tab-buttons button {
+      flex: 1 0 180px;
+      padding: 1rem;
+      border: 0;
+      background: color-mix(in oklab, var(--bg-2) 76%, transparent);
+      color: var(--muted);
+      cursor: pointer;
+      font-weight: 850;
+    }
+    .tab-buttons button[aria-selected="true"] {
+      color: var(--text);
+      background: var(--surface-2);
+    }
+    .tab-panel { padding: 22px; display: none; }
+    .tab-panel.active { display: block; }
+    .component-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    .component-card {
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: color-mix(in oklab, var(--surface) 82%, transparent);
+    }
+    .component-card h3 { margin: 0 0 .45rem; }
+    .component-card p { margin: 0; color: var(--muted); }
+    .swatches { display: flex; flex-wrap: wrap; gap: 12px; }
+    .swatch {
+      width: 120px;
+      height: 96px;
+      border-radius: 18px;
+      padding: 12px;
+      display: flex;
+      align-items: flex-end;
+      border: 1px solid var(--line);
+      font-weight: 850;
+    }
+    .swatch:nth-child(1) { background: var(--accent); }
+    .swatch:nth-child(2) { background: var(--accent-2); }
+    .swatch:nth-child(3) { background: var(--accent-3); color: #06100a; }
+    .swatch:nth-child(4) { background: var(--surface-2); }
+    .accordion { display: grid; gap: 10px; }
+    .accordion-item {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--surface);
+      overflow: hidden;
+    }
+    .accordion-button {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 16px;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      text-align: left;
+      font-weight: 900;
+    }
+    .accordion-panel {
+      padding: 0 16px 16px;
+      color: var(--muted);
+    }
+
+    .automation-grid {
+      display: grid;
+      grid-template-columns: .9fr 1.1fr;
+      gap: 18px;
+      margin-top: 32px;
+    }
+    .checklist { display: grid; gap: 10px; }
+    .check-row {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 12px;
+      align-items: start;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--surface);
+    }
+    .check-row input { width: 18px; min-height: 18px; margin-top: 3px; accent-color: var(--accent-3); }
+    .console {
+      min-height: 300px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(0,0,0,.28);
+      font-family: var(--mono);
+      color: color-mix(in oklab, var(--accent-3) 85%, var(--text));
+      overflow: auto;
+      white-space: pre-wrap;
+    }
+    [data-theme="light"] .console { background: #101827; color: #a8ffcf; }
+
+    .contact-grid {
+      display: grid;
+      grid-template-columns: .95fr 1.05fr;
+      gap: 18px;
+      margin-top: 32px;
+      align-items: start;
+    }
+    .contact-form { display: grid; gap: 12px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .error-text { color: var(--danger); font-size: .82rem; min-height: 1.1em; }
+    .queue-list { display: grid; gap: 10px; }
+    .queue-card {
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--surface);
+    }
+    .queue-card strong { display: block; }
+    .queue-card span { color: var(--muted); font-size: .9rem; }
+
+    .palette, .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 150;
+      display: grid;
+      place-items: start center;
+      padding: 10vh 16px 16px;
+      background: rgba(2,4,10,.62);
+      backdrop-filter: blur(14px);
+    }
+    .palette[hidden], .modal-backdrop[hidden] { display: none; }
+    .palette-card, .modal-card {
+      width: min(720px, 100%);
+      border: 1px solid var(--line);
+      border-radius: 26px;
+      background: color-mix(in oklab, var(--bg-2) 92%, transparent);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .palette-head, .modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 16px;
+      border-bottom: 1px solid var(--line);
+    }
+    .palette-head strong, .modal-head strong { font-size: 1.05rem; }
+    .palette-body { padding: 16px; }
+    .palette-results { display: grid; gap: 8px; margin-top: 12px; max-height: 44vh; overflow: auto; }
+    .command-row {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--surface);
+      cursor: pointer;
+      text-align: left;
+    }
+    .command-row:hover, .command-row[aria-selected="true"] {
+      border-color: var(--accent-2);
+      background: var(--surface-2);
+    }
+    .command-row span { color: var(--muted); font-size: .86rem; }
+    .kbd {
+      display: inline-grid;
+      place-items: center;
+      min-width: 28px;
+      height: 26px;
+      padding: 0 .42rem;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--surface-2);
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: .78rem;
+    }
+    .modal-card { width: min(620px, 100%); }
+    .modal-body { padding: 18px; color: var(--muted); }
+    .modal-body p { margin-top: 0; }
+
+    .toast-stack {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      z-index: 190;
+      display: grid;
+      gap: 10px;
+      width: min(360px, calc(100vw - 32px));
+    }
+    .toast {
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--accent-3);
+      border-radius: 16px;
+      background: color-mix(in oklab, var(--bg-2) 94%, transparent);
+      box-shadow: 0 18px 50px rgba(0,0,0,.24);
+      animation: toastIn .22s ease both;
+    }
+    .toast.warn { border-left-color: var(--warning); }
+    .toast.danger { border-left-color: var(--danger); }
+    @keyframes toastIn { from { transform: translateY(10px); opacity: 0; } }
+
+    .footer {
+      padding: 34px 0 48px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+    }
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 1040px) {
+      .hero-grid, .dashboard-grid, .split-grid, .automation-grid, .contact-grid { grid-template-columns: 1fr; }
+      .feature-strip, .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .task-form { grid-template-columns: 1fr 1fr; }
+      .task-form .field:nth-child(2) { grid-column: span 2; }
+      .component-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 760px) {
+      :root { --header-h: 66px; }
+      .nav {
+        position: fixed;
+        top: calc(var(--header-h) + 10px);
+        left: 16px;
+        right: 16px;
+        display: none;
+        flex-direction: column;
+        align-items: stretch;
+        border-radius: 24px;
+        padding: 10px;
+        background: color-mix(in oklab, var(--bg-2) 94%, transparent);
+        box-shadow: var(--shadow);
+      }
+      body.menu-open .nav { display: flex; }
+      .nav a { width: 100%; }
+      .menu-button { display: inline-flex; }
+      .hero { padding-top: 38px; }
+      .hero-card { order: -1; }
+      .feature-strip, .kpi-grid, .board, .component-grid, .form-row { grid-template-columns: 1fr; }
+      .task-form { grid-template-columns: 1fr; }
+      .task-form .field:nth-child(2) { grid-column: auto; }
+      .hero-stats { grid-template-columns: 1fr; }
+      .section-pad { padding: 68px 0; }
+      .panel-header { flex-direction: column; align-items: stretch; }
+      .toolbar .field { flex: 1 1 100%; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .001ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .001ms !important;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Fitness tracker</h1>
+  <canvas id="spaceCanvas" aria-hidden="true"></canvas>
+  <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
+  <a class="skip-link" href="#main">Přeskočit na obsah</a>
 
-    <div class="grid stats">
-      <div class="card">
-        <div class="muted">Tréninky tento týden</div>
-        <div class="big-number" id="weekWorkouts">0</div>
-        <div class="muted">Cíl: 4 tréninky týdně</div>
-      </div>
-      <div class="card">
-        <div class="muted">Protein dnes</div>
-        <div class="big-number"><span id="todayProtein">0</span> g</div>
-        <div class="muted">Součet z jídel za dnešek</div>
-      </div>
-      <div class="card">
-        <div class="muted">Plán na zítra</div>
-        <div class="big-number" id="tomorrowDate">-</div>
-        <div class="muted">Co si připravit a koupit</div>
+  <header class="site-header" id="siteHeader">
+    <div class="header-inner">
+      <a class="brand" href="#top" aria-label="Single‑File Command Center">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M4 13.5 10.4 20 20 4" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span>Command Center</span>
+      </a>
+      <nav class="nav" id="mainNav" aria-label="Hlavní navigace">
+        <a href="#produkt">Produkt</a>
+        <a href="#dashboard">Dashboard</a>
+        <a href="#postrehy">Postřehy</a>
+        <a href="#system">Design</a>
+        <a href="#kontakt">Kontakt</a>
+      </nav>
+      <div class="header-actions">
+        <button class="icon-button" id="paletteButton" type="button" title="Otevřít příkazovou paletu" aria-label="Otevřít příkazovou paletu">
+          <span class="kbd">⌘K</span>
+        </button>
+        <button class="icon-button" id="themeButton" type="button" title="Přepnout motiv" aria-label="Přepnout světlý nebo tmavý motiv">◐</button>
+        <button class="icon-button menu-button" id="menuButton" type="button" aria-label="Otevřít menu" aria-expanded="false">☰</button>
       </div>
     </div>
+  </header>
 
-    <div class="grid main">
-      <div class="card">
-        <h2>Tréninkový kalendář</h2>
-        <div class="muted" style="margin-bottom:14px;">Klikni na den a zapiš, jestli jsi byl v gymu. Tohle je hlavní přehled.</div>
-        <div class="row" style="align-items:center; margin-bottom: 10px;">
-          <button onclick="changeMonth(-1)">Předchozí</button>
-          <div style="flex:2; text-align:center; font-weight:700;" id="calendarTitle"></div>
-          <button onclick="changeMonth(1)">Další</button>
+  <main id="main">
+    <section class="hero" id="top">
+      <div class="container hero-grid">
+        <div>
+          <span class="eyebrow">Jedno HTML · žádné knihovny · offline ready</span>
+          <h1>Komplexní web, který se <span class="gradient-text">nerozsype</span>.</h1>
+          <p>Ukázková single‑file aplikace s landing page, dashboardem, kanbanem, poznámkami, grafem, příkazovou paletou, validací formulářů, lokálním ukládáním a responzivním designem.</p>
+          <div class="hero-actions">
+            <a class="btn primary" href="#dashboard">Otevřít dashboard</a>
+            <button class="btn" type="button" data-open-modal="intro">Co to umí</button>
+            <button class="btn ghost" type="button" id="downloadStateButton">Exportovat data</button>
+          </div>
+          <div class="hero-meta" aria-label="Technické vlastnosti">
+            <span class="pill"><span class="pulse-dot"></span>Živá interaktivita</span>
+            <span class="pill">localStorage perzistence</span>
+            <span class="pill">Canvas animace</span>
+            <span class="pill">Přístupnost + klávesnice</span>
+          </div>
         </div>
-        <div id="calendar"></div>
 
-        <div style="height:18px"></div>
-        <h2 style="font-size:18px; margin-bottom:10px;">Ruční přidání tréninku</h2>
-        <div class="row">
-          <input type="date" id="workoutDate" />
-          <select id="workoutType">
-            <option>Push</option>
-            <option>Pull</option>
-            <option>Legs</option>
-            <option>Upper</option>
-            <option>Other</option>
-          </select>
-          <button onclick="addWorkout()">Přidat</button>
-        </div>
-        <div class="muted">Poslední dny v gymu</div>
-        <div class="badge-wrap" id="recentDays"></div>
-        <div class="list" id="workoutList"></div>
+        <aside class="hero-card" aria-label="Náhled aplikace">
+          <div class="hero-card-top">
+            <div class="window-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+            <span class="live-badge">SYSTEM OK</span>
+          </div>
+          <div class="orbital" aria-hidden="true">
+            <span class="orbit-ring"></span>
+            <span class="orbit-ring"></span>
+            <span class="orbit-ring"></span>
+            <div class="orbital-core">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M12 2 3.5 7v10L12 22l8.5-5V7L12 2Z" stroke="white" stroke-width="1.7"/><path d="M12 7v10M7.5 9.6l9 4.8M16.5 9.6l-9 4.8" stroke="white" stroke-width="1.7" stroke-linecap="round"/></svg>
+            </div>
+          </div>
+          <div class="hero-stats">
+            <div class="hero-stat"><strong><span data-count="100">0</span>%</strong><span>jediný soubor</span></div>
+            <div class="hero-stat"><strong><span data-count="0">0</span></strong><span>externích dependency</span></div>
+            <div class="hero-stat"><strong><span data-count="9">0</span>+</strong><span>modulů</span></div>
+          </div>
+        </aside>
       </div>
+    </section>
 
-      <div class="card">
-        <h2>Jídlo a protein</h2>
-        <div class="row">
-          <input type="date" id="foodDate" />
-          <input type="text" id="foodText" placeholder="Např. skyr, kuře s rýží, protein shake" />
-          <input type="number" id="foodProtein" placeholder="Protein (g)" />
-          <button onclick="addFood()">Přidat</button>
-        </div>
-        <div class="list" id="foodList"></div>
+    <section id="produkt" class="container">
+      <div class="feature-strip">
+        <article class="mini-card">
+          <div class="icon">⚡</div>
+          <h3>Rychlé UI</h3>
+          <p>CSS proměnné, lehké animace a žádný balast z frameworků.</p>
+        </article>
+        <article class="mini-card">
+          <div class="icon">🧭</div>
+          <h3>Scroll spy</h3>
+          <p>Navigace ví, kde právě jsi, a funguje i na mobilu.</p>
+        </article>
+        <article class="mini-card">
+          <div class="icon">🧠</div>
+          <h3>Chytré moduly</h3>
+          <p>Úkoly, poznámky, grafy, validace, konzole a paleta příkazů.</p>
+        </article>
+        <article class="mini-card">
+          <div class="icon">🛡️</div>
+          <h3>Bezpečnější základ</h3>
+          <p>Vstupy se escapují, data zůstávají jen v prohlížeči.</p>
+        </article>
       </div>
+    </section>
 
-      <div class="card">
-        <h2>Plán na zítra</h2>
-        <div class="row">
-          <input type="text" id="todoText" placeholder="Např. připravit svačinu, koupit skyr, udělat kuře s rýží" />
-          <button onclick="addTodo()">Přidat</button>
+    <section id="dashboard" class="section-pad">
+      <div class="container">
+        <span class="eyebrow">Interaktivní centrum</span>
+        <h2 class="section-title">Dashboard, který si pamatuje stav.</h2>
+        <p class="section-lede">Všechno běží v jednom HTML souboru. Úkoly, poznámky, kontakty i nastavení se ukládají do lokálního úložiště prohlížeče.</p>
+
+        <div class="kpi-grid" aria-label="Souhrn metrik">
+          <div class="kpi"><span>Aktivní úkoly</span><strong id="kpiActive">0</strong><small>živě z kanbanu</small></div>
+          <div class="kpi"><span>Dokončeno</span><strong id="kpiDone">0%</strong><small>počítá se samo</small></div>
+          <div class="kpi"><span>Priorita high</span><strong id="kpiHigh">0</strong><small>riziko backlogu</small></div>
+          <div class="kpi"><span>Index strategie</span><strong id="kpiStrategy">0</strong><small>ze sliderů</small></div>
         </div>
-        <div class="list" id="todoList"></div>
-      </div>
 
-      <div class="card">
-        <h2>Poznámky</h2>
-        <textarea id="notes" placeholder="Sem si piš váhu, jak šel trénink, co koupit, co připravit..."></textarea>
+        <div class="dashboard-grid">
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">Kanban úkolů</h3>
+                <p class="panel-subtitle">Přidej úkol, filtruj, smaž nebo přetáhni mezi sloupci.</p>
+              </div>
+              <div class="toolbar" aria-label="Akce kanbanu">
+                <button class="btn small" type="button" id="seedTasksButton">Demo data</button>
+                <button class="btn small" type="button" id="exportTasksButton">Export úkolů</button>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="toolbar">
+                <div class="field" style="flex:1 1 240px">
+                  <label for="taskSearch">Hledat</label>
+                  <input id="taskSearch" type="search" placeholder="Název, detail, priorita…">
+                </div>
+                <div class="field" style="flex:0 0 180px">
+                  <label for="priorityFilter">Priorita</label>
+                  <select id="priorityFilter">
+                    <option value="all">Vše</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </select>
+                </div>
+              </div>
+
+              <form class="task-form" id="taskForm" autocomplete="off">
+                <div class="field">
+                  <label for="taskTitle">Název</label>
+                  <input id="taskTitle" name="title" maxlength="70" required placeholder="Např. připravit prototyp">
+                </div>
+                <div class="field">
+                  <label for="taskDetail">Detail</label>
+                  <input id="taskDetail" name="detail" maxlength="120" placeholder="Krátká poznámka">
+                </div>
+                <div class="field">
+                  <label for="taskPriority">Priorita</label>
+                  <select id="taskPriority" name="priority">
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="low">Low</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="taskDue">Termín</label>
+                  <input id="taskDue" name="due" type="date">
+                </div>
+                <button class="btn primary" type="submit">Přidat</button>
+              </form>
+
+              <div class="board" aria-label="Kanban board">
+                <section class="task-column" data-status="backlog" aria-label="Backlog">
+                  <div class="column-head"><span>Backlog</span><span class="count-badge" data-count-for="backlog">0</span></div>
+                  <div class="task-list" data-list="backlog"></div>
+                </section>
+                <section class="task-column" data-status="doing" aria-label="V procesu">
+                  <div class="column-head"><span>V procesu</span><span class="count-badge" data-count-for="doing">0</span></div>
+                  <div class="task-list" data-list="doing"></div>
+                </section>
+                <section class="task-column" data-status="done" aria-label="Hotovo">
+                  <div class="column-head"><span>Hotovo</span><span class="count-badge" data-count-for="done">0</span></div>
+                  <div class="task-list" data-list="done"></div>
+                </section>
+              </div>
+            </div>
+          </article>
+
+          <div class="panel-stack" style="display:grid;gap:18px">
+            <article class="panel">
+              <div class="panel-header">
+                <div>
+                  <h3 class="panel-title">Strategický mix</h3>
+                  <p class="panel-subtitle">Slidery kreslí graf a počítají index.</p>
+                </div>
+              </div>
+              <div class="panel-body">
+                <div class="goal-list">
+                  <div class="goal-row"><label for="goalSpeed">Rychlost dodání</label><output for="goalSpeed" id="outSpeed">70</output><input id="goalSpeed" data-goal="speed" type="range" min="0" max="100" value="70"></div>
+                  <div class="goal-row"><label for="goalQuality">Kvalita výstupu</label><output for="goalQuality" id="outQuality">76</output><input id="goalQuality" data-goal="quality" type="range" min="0" max="100" value="76"></div>
+                  <div class="goal-row"><label for="goalAutomation">Automatizace</label><output for="goalAutomation" id="outAutomation">58</output><input id="goalAutomation" data-goal="automation" type="range" min="0" max="100" value="58"></div>
+                  <div class="goal-row"><label for="goalImpact">Dopad na byznys</label><output for="goalImpact" id="outImpact">84</output><input id="goalImpact" data-goal="impact" type="range" min="0" max="100" value="84"></div>
+                </div>
+                <div class="chart-wrap"><canvas id="strategyChart" height="240" aria-label="Graf strategického mixu"></canvas></div>
+              </div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-header">
+                <div>
+                  <h3 class="panel-title">Rychlá poznámka</h3>
+                  <p class="panel-subtitle">Mini markdown preview: nadpisy, tučné, kurzíva, kód.</p>
+                </div>
+                <button class="btn small" type="button" id="clearNoteButton">Vyčistit</button>
+              </div>
+              <div class="panel-body note-grid">
+                <div class="field">
+                  <label for="noteTitle">Titulek</label>
+                  <input id="noteTitle" maxlength="90" placeholder="Název poznámky">
+                </div>
+                <div class="field">
+                  <label for="noteBody">Text</label>
+                  <textarea id="noteBody" placeholder="## Nápad\n**Silná část**, _detail_ a `kód`."></textarea>
+                </div>
+                <div class="note-footer"><span id="noteStatus">Uloženo lokálně</span><span id="noteWords">0 slov</span></div>
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <div class="split-grid">
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">Náhled poznámky</h3>
+                <p class="panel-subtitle">Escapovaný výstup, aby se poznámka nerozbila HTML tagy.</p>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="note-preview" id="notePreview"></div>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">Mini konzole</h3>
+                <p class="panel-subtitle">Simulace workflow bez serveru.</p>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="toolbar">
+                <button class="btn small" type="button" data-run="deploy">Deploy</button>
+                <button class="btn small" type="button" data-run="audit">Audit</button>
+                <button class="btn small" type="button" data-run="sync">Sync</button>
+                <button class="btn small" type="button" id="clearConsoleButton">Clear</button>
+              </div>
+              <div class="console" id="consoleLog" role="log" aria-live="polite"></div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="postrehy" class="section-pad">
+      <div class="container">
+        <span class="eyebrow">Postřehy</span>
+        <h2 class="section-title">Architektura pro stabilitu.</h2>
+        <p class="section-lede">Komplexita je rozdělená do malých modulů: každý má svůj stav, render funkci a bezpečné ukládání. Když prohlížeč něco nepodporuje, web má fallback.</p>
+
+        <div class="timeline">
+          <article class="timeline-item">
+            <h3>1. Bez externích CDN</h3>
+            <p>Žádné frameworky, fonty, ikony ani obrázky z internetu. Soubor otevřeš i offline.</p>
+          </article>
+          <article class="timeline-item">
+            <h3>2. Stav v localStorage</h3>
+            <p>Úkoly, poznámky, kontakty i nastavení přežijí refresh. Při chybě parsování se načte bezpečný default.</p>
+          </article>
+          <article class="timeline-item">
+            <h3>3. Přístupnost</h3>
+            <p>Semantické sekce, skip link, aria popisky, ovládání klávesnicí a čitelné focus stavy.</p>
+          </article>
+          <article class="timeline-item">
+            <h3>4. Modulární JavaScript</h3>
+            <p>Jeden uzavřený scope, žádné globální proměnné kromě DOM API, opatrné selektory a guardy.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="system" class="section-pad">
+      <div class="container">
+        <span class="eyebrow">Design systém</span>
+        <h2 class="section-title">Komponenty v jednom souboru.</h2>
+        <p class="section-lede">Tabs, akordeony, modal, swatche a karty jsou připravené tak, aby se daly snadno kopírovat do reálného projektu.</p>
+
+        <div class="tabs" data-tabs>
+          <div class="tab-buttons" role="tablist" aria-label="Ukázky komponent">
+            <button type="button" role="tab" aria-selected="true" aria-controls="tab-cards" id="tabBtnCards" data-tab-target="tab-cards">Karty</button>
+            <button type="button" role="tab" aria-selected="false" aria-controls="tab-colors" id="tabBtnColors" data-tab-target="tab-colors">Barvy</button>
+            <button type="button" role="tab" aria-selected="false" aria-controls="tab-faq" id="tabBtnFaq" data-tab-target="tab-faq">FAQ</button>
+          </div>
+          <div class="tab-panel active" id="tab-cards" role="tabpanel" aria-labelledby="tabBtnCards">
+            <div class="component-grid">
+              <article class="component-card"><h3>Glass panel</h3><p>Panel s průhledností, blur efektem a okrajem přes proměnné.</p></article>
+              <article class="component-card"><h3>Command UX</h3><p>Klávesová zkratka Ctrl/⌘ + K otevírá rychlé akce.</p></article>
+              <article class="component-card"><h3>Responsive grid</h3><p>Layout se mění z více sloupců na jeden bez JS.</p></article>
+            </div>
+          </div>
+          <div class="tab-panel" id="tab-colors" role="tabpanel" aria-labelledby="tabBtnColors">
+            <div class="swatches" aria-label="Barevné swatche">
+              <div class="swatch">Accent</div>
+              <div class="swatch">Signal</div>
+              <div class="swatch">Success</div>
+              <div class="swatch">Surface</div>
+            </div>
+          </div>
+          <div class="tab-panel" id="tab-faq" role="tabpanel" aria-labelledby="tabBtnFaq">
+            <div class="accordion" data-accordion>
+              <div class="accordion-item">
+                <button class="accordion-button" type="button" aria-expanded="true">Je to opravdu jeden soubor? <span>−</span></button>
+                <div class="accordion-panel">Ano. CSS i JavaScript jsou vložené přímo v HTML. Nejsou zde žádné externí knihovny ani assety.</div>
+              </div>
+              <div class="accordion-item">
+                <button class="accordion-button" type="button" aria-expanded="false">Kam se ukládají data? <span>+</span></button>
+                <div class="accordion-panel" hidden>Jen do localStorage v daném prohlížeči. Nic se nikam neposílá.</div>
+              </div>
+              <div class="accordion-item">
+                <button class="accordion-button" type="button" aria-expanded="false">Dá se to dál rozšířit? <span>+</span></button>
+                <div class="accordion-panel" hidden>Ano. Přidej nové pole do objektu state, render funkci a volání saveState().</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="automatizace" class="section-pad">
+      <div class="container">
+        <span class="eyebrow">Automatizace</span>
+        <h2 class="section-title">Checklist a workflow simulátor.</h2>
+        <p class="section-lede">Tahle část ukazuje práci s formulářovými prvky, event delegací, logováním a ukládáním stavu bez backendu.</p>
+
+        <div class="automation-grid">
+          <article class="panel">
+            <div class="panel-header">
+              <div><h3 class="panel-title">Launch checklist</h3><p class="panel-subtitle">Stav checkboxů se ukládá lokálně.</p></div>
+            </div>
+            <div class="panel-body">
+              <div class="checklist" id="checklist">
+                <label class="check-row"><input type="checkbox" data-check="content"><span><strong>Obsah</strong><br><small>Texty mají jasnou hierarchii a žádné placeholdery.</small></span></label>
+                <label class="check-row"><input type="checkbox" data-check="mobile"><span><strong>Mobil</strong><br><small>Layout se nerozpadá pod 760 px.</small></span></label>
+                <label class="check-row"><input type="checkbox" data-check="keyboard"><span><strong>Klávesnice</strong><br><small>Paleta, menu, modal i formuláře jsou ovladatelné.</small></span></label>
+                <label class="check-row"><input type="checkbox" data-check="export"><span><strong>Export</strong><br><small>Data lze stáhnout jako JSON snapshot.</small></span></label>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <div><h3 class="panel-title">Stabilita v praxi</h3><p class="panel-subtitle">Pár bezpečných patternů pro single‑file web.</p></div>
+            </div>
+            <div class="panel-body">
+              <div class="component-grid" style="grid-template-columns:1fr 1fr">
+                <div class="component-card"><h3>Guard clauses</h3><p>Každý modul kontroluje, jestli existuje jeho DOM prvek.</p></div>
+                <div class="component-card"><h3>Escaping</h3><p>Uživatelský text se nepouští do HTML bez ošetření.</p></div>
+                <div class="component-card"><h3>Fallbacky</h3><p>IntersectionObserver, storage i animace mají náhradní chování.</p></div>
+                <div class="component-card"><h3>Jednoduchý state</h3><p>Data jsou čisté objekty, žádná magie ani runtime dependency.</p></div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="kontakt" class="section-pad">
+      <div class="container">
+        <span class="eyebrow">Formulář</span>
+        <h2 class="section-title">Lokální fronta zpráv.</h2>
+        <p class="section-lede">Formulář nic neposílá na server. Zvaliduje vstup, uloží zprávu do prohlížeče a dovolí ji exportovat.</p>
+
+        <div class="contact-grid">
+          <article class="panel">
+            <div class="panel-header"><div><h3 class="panel-title">Nová zpráva</h3><p class="panel-subtitle">Validace jména, e‑mailu a obsahu.</p></div></div>
+            <div class="panel-body">
+              <form class="contact-form" id="contactForm" novalidate>
+                <div class="form-row">
+                  <div class="field"><label for="contactName">Jméno</label><input id="contactName" name="name" autocomplete="name"><span class="error-text" data-error-for="name"></span></div>
+                  <div class="field"><label for="contactEmail">E‑mail</label><input id="contactEmail" name="email" type="email" autocomplete="email"><span class="error-text" data-error-for="email"></span></div>
+                </div>
+                <div class="field"><label for="contactType">Typ</label><select id="contactType" name="type"><option>Feedback</option><option>Bug</option><option>Nápad</option><option>Dotaz</option></select></div>
+                <div class="field"><label for="contactMessage">Zpráva</label><textarea id="contactMessage" name="message" minlength="8" placeholder="Napiš zprávu…"></textarea><span class="error-text" data-error-for="message"></span></div>
+                <div class="toolbar"><button class="btn primary" type="submit">Uložit do fronty</button><button class="btn" type="button" id="exportContactsButton">Export fronty</button><button class="btn ghost" type="button" id="clearContactsButton">Smazat frontu</button></div>
+              </form>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header"><div><h3 class="panel-title">Fronta</h3><p class="panel-subtitle">Poslední lokálně uložené zprávy.</p></div><span class="tag" id="queueCount">0 položek</span></div>
+            <div class="panel-body"><div class="queue-list" id="queueList"></div></div>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <span>© <span id="year"></span> Single‑File Command Center</span>
+      <span>HTML + CSS + JavaScript v jednom souboru · bez externích dependency</span>
+      <button class="btn small" type="button" id="resetAllButton">Reset demo dat</button>
+    </div>
+  </footer>
+
+  <div class="palette" id="commandPalette" hidden>
+    <div class="palette-card" role="dialog" aria-modal="true" aria-labelledby="paletteTitle">
+      <div class="palette-head"><strong id="paletteTitle">Příkazová paleta</strong><button class="icon-button" type="button" data-close-palette aria-label="Zavřít">×</button></div>
+      <div class="palette-body">
+        <label for="commandSearch">Hledej akci</label>
+        <input id="commandSearch" type="search" placeholder="Např. theme, úkol, export, kontakt…">
+        <div class="palette-results" id="commandResults"></div>
       </div>
     </div>
   </div>
 
+  <div class="modal-backdrop" id="modalBackdrop" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-head"><strong id="modalTitle">Detail</strong><button class="icon-button" type="button" data-close-modal aria-label="Zavřít">×</button></div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <div class="toast-stack" id="toastStack" aria-live="polite" aria-atomic="true"></div>
+
   <script>
-    const STORAGE_KEY = 'fitness-tracker-single-file-v1';
+    (() => {
+      'use strict';
 
-    function todayStr() {
-      return new Date().toISOString().slice(0, 10);
-    }
+      const $ = (selector, root = document) => root.querySelector(selector);
+      const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+      const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    function tomorrowStr() {
-      const d = new Date();
-      d.setDate(d.getDate() + 1);
-      return d.toISOString().slice(0, 10);
-    }
-
-    let currentMonth = new Date().getMonth();
-    let currentYear = new Date().getFullYear();
-
-    const defaultData = {
-      workouts: [],
-      foodLog: [],
-      tomorrowPlan: [
-        { id: crypto.randomUUID(), text: 'Připravit svačinu do práce', done: false },
-        { id: crypto.randomUUID(), text: 'Nachystat protein nebo skyr', done: false },
-        { id: crypto.randomUUID(), text: 'Naplánovat oběd na zítra', done: false }
-      ],
-      notes: ''
-    };
-
-    let data = loadData();
-
-    function loadData() {
-      try {
-        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-        if (!saved) return structuredClone(defaultData);
-        return {
-          workouts: saved.workouts || [],
-          foodLog: saved.foodLog || [],
-          tomorrowPlan: saved.tomorrowPlan || structuredClone(defaultData.tomorrowPlan),
-          notes: saved.notes || ''
-        };
-      } catch {
-        return structuredClone(defaultData);
-      }
-    }
-
-    function saveData() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    }
-
-    function getWeekWorkoutCount() {
-      const now = new Date();
-      const start = new Date(now);
-      const day = (now.getDay() + 6) % 7;
-      start.setDate(now.getDate() - day);
-      start.setHours(0, 0, 0, 0);
-      return data.workouts.filter(w => new Date(w.date) >= start).length;
-    }
-
-    function getTodayProtein() {
-      return data.foodLog
-        .filter(f => f.date === todayStr())
-        .reduce((sum, item) => sum + (Number(item.protein) || 0), 0);
-    }
-
-    function render() {
-      document.getElementById('weekWorkouts').textContent = getWeekWorkoutCount();
-      document.getElementById('todayProtein').textContent = getTodayProtein();
-      document.getElementById('tomorrowDate').textContent = tomorrowStr();
-
-      document.getElementById('workoutDate').value = todayStr();
-      document.getElementById('foodDate').value = todayStr();
-      document.getElementById('notes').value = data.notes;
-
-      renderCalendar();
-      renderRecentDays();
-      renderWorkouts();
-      renderFood();
-      renderTodos();
-      saveData();
-    }
-
-    function getWorkoutForDate(dateStr) {
-      return data.workouts.find(w => w.date === dateStr);
-    }
-
-    function renderCalendar() {
-      const names = ['Leden', 'Únor', 'Březen', 'Duben', 'Květen', 'Červen', 'Červenec', 'Srpen', 'Září', 'Říjen', 'Listopad', 'Prosinec'];
-      const dayNames = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
-      document.getElementById('calendarTitle').textContent = names[currentMonth] + ' ' + currentYear;
-
-      const firstDay = new Date(currentYear, currentMonth, 1);
-      const lastDay = new Date(currentYear, currentMonth + 1, 0);
-      const startOffset = (firstDay.getDay() + 6) % 7;
-      const totalDays = lastDay.getDate();
-      const today = todayStr();
-
-      let html = '<div class="calendar-grid">';
-      dayNames.forEach(name => {
-        html += '<div class="calendar-head">' + name + '</div>';
-      });
-
-      for (let i = 0; i < startOffset; i++) {
-        html += '<div class="calendar-day calendar-empty"></div>';
-      }
-
-      for (let day = 1; day <= totalDays; day++) {
-        const dateObj = new Date(currentYear, currentMonth, day);
-        const dateStr = dateObj.toISOString().slice(0, 10);
-        const workout = getWorkoutForDate(dateStr);
-        const classes = ['calendar-day'];
-        if (dateStr === today) classes.push('today');
-        if (workout) classes.push('has-workout');
-
-        html += '<div class="' + classes.join(' ') + '" onclick="quickAddWorkout(\'' + dateStr + '\')">';
-        html += '<div class="calendar-day-top"><span>' + day + '</span></div>';
-        html += workout
-          ? '<div class="calendar-tag">' + workout.type + '</div>'
-          : '<div class="muted">Přidat trénink</div>';
-        html += '</div>';
-      }
-
-      html += '</div>';
-      document.getElementById('calendar').innerHTML = html;
-    }
-
-    function quickAddWorkout(dateStr) {
-      const existing = getWorkoutForDate(dateStr);
-      if (existing) {
-        const remove = confirm('Pro ' + dateStr + ' už máš zapsaný trénink (' + existing.type + '). Chceš ho smazat?');
-        if (remove) {
-          removeWorkout(existing.id);
+      const storage = {
+        get(key, fallback) {
+          try {
+            const raw = localStorage.getItem(key);
+            return raw ? JSON.parse(raw) : fallback;
+          } catch (error) {
+            console.warn('Storage read failed:', key, error);
+            return fallback;
+          }
+        },
+        set(key, value) {
+          try {
+            localStorage.setItem(key, JSON.stringify(value));
+          } catch (error) {
+            console.warn('Storage write failed:', key, error);
+          }
+        },
+        remove(key) {
+          try { localStorage.removeItem(key); } catch (error) { console.warn(error); }
         }
-        return;
-      }
-      const type = prompt('Jaký trénink chceš zapsat pro ' + dateStr + '?
-Napiš třeba Push, Pull, Legs, Upper...', 'Push');
-      if (!type) return;
-      data.workouts.unshift({ id: crypto.randomUUID(), date: dateStr, type: type.trim() || 'Workout' });
-      render();
-    }
+      };
 
-    function changeMonth(direction) {
-      currentMonth += direction;
-      if (currentMonth < 0) {
-        currentMonth = 11;
-        currentYear -= 1;
-      }
-      if (currentMonth > 11) {
-        currentMonth = 0;
-        currentYear += 1;
-      }
-      renderCalendar();
-    }
+      const defaultTasks = [
+        { id: 't1', title: 'Navrhnout hero sekci', detail: 'Silná typografie, CTA, motion bez knihoven', priority: 'high', status: 'done', due: '' },
+        { id: 't2', title: 'Přidat kanban', detail: 'Drag & drop, filtry a lokální uložení', priority: 'high', status: 'doing', due: '' },
+        { id: 't3', title: 'Ošetřit formulář', detail: 'Validace a fronta zpráv', priority: 'medium', status: 'backlog', due: '' },
+        { id: 't4', title: 'Zkontrolovat mobile layout', detail: 'Navigace, karty, dashboard', priority: 'medium', status: 'backlog', due: '' },
+        { id: 't5', title: 'Doplnit command palette', detail: 'Ctrl/⌘ + K pro rychlé akce', priority: 'low', status: 'done', due: '' }
+      ];
 
-    function renderRecentDays() {
-      const wrap = document.getElementById('recentDays');
-      wrap.innerHTML = '';
-      const uniqueDays = [...new Set(data.workouts.map(w => w.date))].slice(0, 7);
-      if (!uniqueDays.length) {
-        wrap.innerHTML = '<div class="muted">Zatím žádný zapsaný trénink.</div>';
-        return;
-      }
-      uniqueDays.forEach(day => {
-        const badge = document.createElement('div');
-        badge.className = 'badge';
-        badge.textContent = day;
-        wrap.appendChild(badge);
+      const defaultNote = {
+        title: 'Poznámka k webu',
+        body: '## Co tu je\n**Komplexní single-file web** bez externích knihoven.\n\n- kanban\n- graf\n- poznámky\n- příkazová paleta\n\n`localStorage` drží stav i po refreshi.'
+      };
+
+      const clone = value => JSON.parse(JSON.stringify(value));
+      const defaultGoals = { speed: 70, quality: 76, automation: 58, impact: 84 };
+      const state = {
+        tasks: storage.get('cc.tasks', clone(defaultTasks)),
+        note: storage.get('cc.note', clone(defaultNote)),
+        goals: storage.get('cc.goals', clone(defaultGoals)),
+        contacts: storage.get('cc.contacts', []),
+        checks: storage.get('cc.checks', {})
+      };
+
+      if (!Array.isArray(state.tasks)) state.tasks = clone(defaultTasks);
+      if (!state.note || typeof state.note !== 'object') state.note = clone(defaultNote);
+      if (!state.goals || typeof state.goals !== 'object') state.goals = clone(defaultGoals);
+      if (!Array.isArray(state.contacts)) state.contacts = [];
+      if (!state.checks || typeof state.checks !== 'object') state.checks = {};
+      ['speed', 'quality', 'automation', 'impact'].forEach(key => {
+        const value = Number(state.goals[key]);
+        state.goals[key] = Number.isFinite(value) ? Math.min(100, Math.max(0, value)) : defaultGoals[key];
       });
-    }
 
-    function renderWorkouts() {
-      const list = document.getElementById('workoutList');
-      list.innerHTML = '';
-      data.workouts.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'item';
-        div.innerHTML = `
-          <div class="item-left">
-            <div class="item-text">
-              <div class="item-title">${item.type}</div>
-              <div class="muted">${item.date}</div>
-            </div>
-          </div>
-          <button class="small-btn" onclick="removeWorkout('${item.id}')">Smazat</button>
-        `;
-        list.appendChild(div);
-      });
-    }
+      const statuses = ['backlog', 'doing', 'done'];
+      const statusLabel = { backlog: 'Backlog', doing: 'V procesu', done: 'Hotovo' };
+      const priorityLabel = { high: 'High', medium: 'Medium', low: 'Low' };
 
-    function renderFood() {
-      const list = document.getElementById('foodList');
-      list.innerHTML = '';
-      data.foodLog.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'item';
-        div.innerHTML = `
-          <div class="item-left">
-            <div class="item-text">
-              <div class="item-title">${item.text}</div>
-              <div class="muted">${item.date} · ${item.protein} g proteinu</div>
-            </div>
-          </div>
-          <button class="small-btn" onclick="removeFood('${item.id}')">Smazat</button>
-        `;
-        list.appendChild(div);
-      });
-    }
+      const save = () => {
+        storage.set('cc.tasks', state.tasks);
+        storage.set('cc.note', state.note);
+        storage.set('cc.goals', state.goals);
+        storage.set('cc.contacts', state.contacts);
+        storage.set('cc.checks', state.checks);
+      };
 
-    function renderTodos() {
-      const list = document.getElementById('todoList');
-      list.innerHTML = '';
-      data.tomorrowPlan.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'item';
-        div.innerHTML = `
-          <div class="item-left">
-            <input class="checkbox" type="checkbox" ${item.done ? 'checked' : ''} onchange="toggleTodo('${item.id}')" />
-            <div class="item-text">
-              <div class="item-title ${item.done ? 'done' : ''}">${item.text}</div>
-            </div>
-          </div>
-          <button class="small-btn" onclick="removeTodo('${item.id}')">Smazat</button>
-        `;
-        list.appendChild(div);
-      });
-    }
-
-    function addWorkout() {
-      const date = document.getElementById('workoutDate').value;
-      const type = document.getElementById('workoutType').value;
-      if (!date) return;
-      data.workouts.unshift({ id: crypto.randomUUID(), date, type });
-      render();
-    }
-
-    function removeWorkout(id) {
-      data.workouts = data.workouts.filter(item => item.id !== id);
-      render();
-    }
-
-    function addFood() {
-      const date = document.getElementById('foodDate').value;
-      const text = document.getElementById('foodText').value.trim();
-      const protein = document.getElementById('foodProtein').value;
-      if (!text) return;
-      data.foodLog.unshift({
-        id: crypto.randomUUID(),
-        date,
-        text,
-        protein: Number(protein) || 0
-      });
-      document.getElementById('foodText').value = '';
-      document.getElementById('foodProtein').value = '';
-      render();
-    }
-
-    function removeFood(id) {
-      data.foodLog = data.foodLog.filter(item => item.id !== id);
-      render();
-    }
-
-    function addTodo() {
-      const text = document.getElementById('todoText').value.trim();
-      if (!text) return;
-      data.tomorrowPlan.push({ id: crypto.randomUUID(), text, done: false });
-      document.getElementById('todoText').value = '';
-      render();
-    }
-
-    function toggleTodo(id) {
-      data.tomorrowPlan = data.tomorrowPlan.map(item =>
-        item.id === id ? { ...item, done: !item.done } : item
-      );
-      render();
-    }
-
-    function removeTodo(id) {
-      data.tomorrowPlan = data.tomorrowPlan.filter(item => item.id !== id);
-      render();
-    }
-
-    document.addEventListener('input', function(e) {
-      if (e.target.id === 'notes') {
-        data.notes = e.target.value;
-        saveData();
+      function escapeHTML(value) {
+        return String(value ?? '').replace(/[&<>'"]/g, char => ({
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+        })[char]);
       }
-    });
 
-    render();
+      function uid(prefix = 'id') {
+        return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+      }
+
+      function toast(message, type = 'ok') {
+        const stack = $('#toastStack');
+        if (!stack) return;
+        const node = document.createElement('div');
+        node.className = `toast ${type === 'warn' ? 'warn' : type === 'danger' ? 'danger' : ''}`;
+        node.textContent = message;
+        stack.appendChild(node);
+        window.setTimeout(() => {
+          node.style.opacity = '0';
+          node.style.transform = 'translateY(8px)';
+          window.setTimeout(() => node.remove(), 220);
+        }, 3300);
+      }
+
+      function downloadJSON(filename, data) {
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      function setTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        storage.set('cc.theme', theme);
+      }
+
+      function initTheme() {
+        const stored = storage.get('cc.theme', null);
+        const preferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        setTheme(stored || preferred);
+        $('#themeButton')?.addEventListener('click', () => {
+          const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+          setTheme(next);
+          drawStrategyChart();
+          toast(next === 'dark' ? 'Tmavý motiv zapnutý' : 'Světlý motiv zapnutý');
+        });
+      }
+
+      function initHeader() {
+        const header = $('#siteHeader');
+        const progress = $('#scrollProgress');
+        const menuButton = $('#menuButton');
+        const nav = $('#mainNav');
+        const links = $$('#mainNav a');
+        let ticking = false;
+
+        const update = () => {
+          const top = window.scrollY || document.documentElement.scrollTop;
+          header?.classList.toggle('is-scrolled', top > 12);
+          const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+          if (progress) progress.style.width = `${Math.min(100, (top / max) * 100)}%`;
+          ticking = false;
+        };
+
+        window.addEventListener('scroll', () => {
+          if (!ticking) {
+            requestAnimationFrame(update);
+            ticking = true;
+          }
+        }, { passive: true });
+        update();
+
+        menuButton?.addEventListener('click', () => {
+          const open = !document.body.classList.contains('menu-open');
+          document.body.classList.toggle('menu-open', open);
+          menuButton.setAttribute('aria-expanded', String(open));
+        });
+
+        links.forEach(link => link.addEventListener('click', () => {
+          document.body.classList.remove('menu-open');
+          menuButton?.setAttribute('aria-expanded', 'false');
+        }));
+
+        if ('IntersectionObserver' in window) {
+          const sections = links
+            .map(link => $(link.getAttribute('href')))
+            .filter(Boolean);
+          const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+              if (entry.isIntersecting) {
+                const id = `#${entry.target.id}`;
+                links.forEach(link => link.classList.toggle('active', link.getAttribute('href') === id));
+              }
+            });
+          }, { rootMargin: '-35% 0px -55% 0px', threshold: 0 });
+          sections.forEach(section => observer.observe(section));
+        } else if (links[0]) {
+          links[0].classList.add('active');
+        }
+      }
+
+      function initCounters() {
+        const counters = $$('[data-count]');
+        const run = el => {
+          if (el.dataset.done) return;
+          el.dataset.done = 'true';
+          const target = Number(el.dataset.count || 0);
+          if (prefersReducedMotion || target === 0) {
+            el.textContent = String(target);
+            return;
+          }
+          const start = performance.now();
+          const duration = 900;
+          const step = now => {
+            const progress = Math.min(1, (now - start) / duration);
+            el.textContent = String(Math.round(target * (1 - Math.pow(1 - progress, 3))));
+            if (progress < 1) requestAnimationFrame(step);
+          };
+          requestAnimationFrame(step);
+        };
+
+        if ('IntersectionObserver' in window) {
+          const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+              if (entry.isIntersecting) {
+                run(entry.target);
+                observer.unobserve(entry.target);
+              }
+            });
+          }, { threshold: .35 });
+          counters.forEach(el => observer.observe(el));
+        } else {
+          counters.forEach(run);
+        }
+      }
+
+      function taskMatches(task) {
+        const query = ($('#taskSearch')?.value || '').trim().toLowerCase();
+        const priority = $('#priorityFilter')?.value || 'all';
+        const text = `${task.title} ${task.detail} ${task.priority} ${task.status}`.toLowerCase();
+        return (!query || text.includes(query)) && (priority === 'all' || task.priority === priority);
+      }
+
+      function createTaskCard(task) {
+        const card = document.createElement('article');
+        card.className = 'task-card';
+        card.draggable = true;
+        card.dataset.id = task.id;
+        const due = task.due ? ` · ${escapeHTML(task.due)}` : '';
+        card.innerHTML = `
+          <h4>${escapeHTML(task.title)}</h4>
+          <p>${escapeHTML(task.detail || 'Bez detailu')}</p>
+          <div class="task-meta">
+            <span class="tag priority-${escapeHTML(task.priority)}">${priorityLabel[task.priority] || task.priority}${due}</span>
+            <span class="card-actions">
+              <button type="button" data-action="cycle" title="Posunout stav" aria-label="Posunout stav">↻</button>
+              <button type="button" data-action="delete" title="Smazat úkol" aria-label="Smazat úkol">×</button>
+            </span>
+          </div>`;
+
+        card.addEventListener('dragstart', event => {
+          event.dataTransfer?.setData('text/plain', task.id);
+          event.dataTransfer?.setData('application/x-task-id', task.id);
+          card.classList.add('dragging');
+        });
+        card.addEventListener('dragend', () => card.classList.remove('dragging'));
+        card.querySelector('[data-action="delete"]')?.addEventListener('click', () => {
+          state.tasks = state.tasks.filter(item => item.id !== task.id);
+          save();
+          renderTasks();
+          toast('Úkol smazán', 'warn');
+        });
+        card.querySelector('[data-action="cycle"]')?.addEventListener('click', () => {
+          const index = statuses.indexOf(task.status);
+          task.status = statuses[(index + 1) % statuses.length];
+          save();
+          renderTasks();
+          toast(`Přesunuto: ${statusLabel[task.status]}`);
+        });
+        return card;
+      }
+
+      function renderTasks() {
+        const visible = state.tasks.filter(taskMatches);
+        statuses.forEach(status => {
+          const list = $(`[data-list="${status}"]`);
+          if (!list) return;
+          list.innerHTML = '';
+          visible.filter(task => task.status === status).forEach(task => list.appendChild(createTaskCard(task)));
+          if (!list.children.length) {
+            const empty = document.createElement('div');
+            empty.className = 'empty-state';
+            empty.textContent = 'Sem můžeš přetáhnout úkol.';
+            list.appendChild(empty);
+          }
+          const count = state.tasks.filter(task => task.status === status).length;
+          const badge = $(`[data-count-for="${status}"]`);
+          if (badge) badge.textContent = String(count);
+        });
+        updateKpis();
+      }
+
+      function updateKpis() {
+        const total = state.tasks.length;
+        const done = state.tasks.filter(task => task.status === 'done').length;
+        const active = state.tasks.filter(task => task.status !== 'done').length;
+        const high = state.tasks.filter(task => task.priority === 'high' && task.status !== 'done').length;
+        const strategy = Math.round((state.goals.speed + state.goals.quality + state.goals.automation + state.goals.impact) / 4);
+        const set = (id, value) => { const el = $(id); if (el) el.textContent = value; };
+        set('#kpiActive', String(active));
+        set('#kpiDone', total ? `${Math.round((done / total) * 100)}%` : '0%');
+        set('#kpiHigh', String(high));
+        set('#kpiStrategy', String(strategy));
+      }
+
+      function initTasks() {
+        $('#taskForm')?.addEventListener('submit', event => {
+          event.preventDefault();
+          const form = event.currentTarget;
+          const title = form.title.value.trim();
+          if (!title) return;
+          state.tasks.unshift({
+            id: uid('task'),
+            title,
+            detail: form.detail.value.trim(),
+            priority: form.priority.value,
+            due: form.due.value,
+            status: 'backlog'
+          });
+          form.reset();
+          save();
+          renderTasks();
+          toast('Úkol přidán');
+        });
+
+        $('#taskSearch')?.addEventListener('input', renderTasks);
+        $('#priorityFilter')?.addEventListener('change', renderTasks);
+        $('#seedTasksButton')?.addEventListener('click', () => {
+          state.tasks = JSON.parse(JSON.stringify(defaultTasks));
+          save();
+          renderTasks();
+          toast('Demo úkoly načteny');
+        });
+        $('#exportTasksButton')?.addEventListener('click', () => downloadJSON('ukoly-command-center.json', state.tasks));
+
+        $$('.task-column').forEach(column => {
+          column.addEventListener('dragover', event => {
+            event.preventDefault();
+            column.classList.add('drag-over');
+          });
+          column.addEventListener('dragleave', event => {
+            if (!column.contains(event.relatedTarget)) column.classList.remove('drag-over');
+          });
+          column.addEventListener('drop', event => {
+            event.preventDefault();
+            column.classList.remove('drag-over');
+            const id = event.dataTransfer?.getData('application/x-task-id') || event.dataTransfer?.getData('text/plain');
+            const task = state.tasks.find(item => item.id === id);
+            if (task) {
+              task.status = column.dataset.status || task.status;
+              save();
+              renderTasks();
+              toast(`Úkol přesunut do: ${statusLabel[task.status]}`);
+            }
+          });
+        });
+
+        renderTasks();
+      }
+
+      function renderMarkdown(text) {
+        const escaped = escapeHTML(text);
+        return escaped
+          .replace(/^### (.*)$/gm, '<h3>$1</h3>')
+          .replace(/^## (.*)$/gm, '<h2>$1</h2>')
+          .replace(/^# (.*)$/gm, '<h2>$1</h2>')
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          .replace(/_(.*?)_/g, '<em>$1</em>')
+          .replace(/`([^`]+)`/g, '<code>$1</code>')
+          .replace(/^- (.*)$/gm, '• $1')
+          .replace(/\n/g, '<br>');
+      }
+
+      function renderNote() {
+        const title = $('#noteTitle')?.value || '';
+        const body = $('#noteBody')?.value || '';
+        state.note = { title, body };
+        const preview = $('#notePreview');
+        if (preview) {
+          const safeTitle = title ? `<h2>${escapeHTML(title)}</h2>` : '<h2>Bez titulku</h2>';
+          preview.innerHTML = `${safeTitle}${renderMarkdown(body || 'Začni psát poznámku…')}`;
+        }
+        const words = body.trim() ? body.trim().split(/\s+/).length : 0;
+        const wordsEl = $('#noteWords');
+        if (wordsEl) wordsEl.textContent = `${words} ${words === 1 ? 'slovo' : words < 5 ? 'slova' : 'slov'}`;
+        const status = $('#noteStatus');
+        if (status) status.textContent = 'Ukládám…';
+        window.clearTimeout(renderNote.timer);
+        renderNote.timer = window.setTimeout(() => {
+          save();
+          if (status) status.textContent = 'Uloženo lokálně';
+        }, 180);
+      }
+
+      function initNotes() {
+        const title = $('#noteTitle');
+        const body = $('#noteBody');
+        if (title) title.value = state.note.title || '';
+        if (body) body.value = state.note.body || '';
+        title?.addEventListener('input', renderNote);
+        body?.addEventListener('input', renderNote);
+        $('#clearNoteButton')?.addEventListener('click', () => {
+          state.note = { title: '', body: '' };
+          if (title) title.value = '';
+          if (body) body.value = '';
+          save();
+          renderNote();
+          toast('Poznámka vyčištěna', 'warn');
+        });
+        renderNote();
+      }
+
+      function getCSSColor(name) {
+        return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#ffffff';
+      }
+
+      function drawStrategyChart() {
+        const canvas = $('#strategyChart');
+        if (!canvas || !canvas.getContext) return;
+        const ctx = canvas.getContext('2d');
+        const rect = canvas.getBoundingClientRect();
+        const width = Math.max(280, rect.width || 560);
+        const height = Math.max(220, rect.height || 240);
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = Math.floor(width * dpr);
+        canvas.height = Math.floor(height * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, width, height);
+
+        const values = [state.goals.speed, state.goals.quality, state.goals.automation, state.goals.impact];
+        const labels = ['Rychlost', 'Kvalita', 'Auto', 'Dopad'];
+        const left = 46;
+        const right = 18;
+        const top = 18;
+        const bottom = 38;
+        const graphW = width - left - right;
+        const graphH = height - top - bottom;
+        const accent = getCSSColor('--accent');
+        const accent2 = getCSSColor('--accent-2');
+        const line = getCSSColor('--line');
+        const text = getCSSColor('--muted');
+
+        ctx.font = '12px ' + getCSSColor('--font');
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 4; i++) {
+          const y = top + graphH - (graphH * i / 4);
+          ctx.strokeStyle = line;
+          ctx.beginPath();
+          ctx.moveTo(left, y);
+          ctx.lineTo(width - right, y);
+          ctx.stroke();
+          ctx.fillStyle = text;
+          ctx.fillText(String(i * 25), 8, y + 4);
+        }
+
+        const step = graphW / Math.max(1, values.length - 1);
+        const points = values.map((value, index) => ({
+          x: left + index * step,
+          y: top + graphH - (value / 100) * graphH,
+          value,
+          label: labels[index]
+        }));
+
+        const gradient = ctx.createLinearGradient(left, top, width - right, top);
+        gradient.addColorStop(0, accent);
+        gradient.addColorStop(1, accent2);
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = 4;
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        points.forEach((point, index) => index ? ctx.lineTo(point.x, point.y) : ctx.moveTo(point.x, point.y));
+        ctx.stroke();
+
+        const fill = ctx.createLinearGradient(0, top, 0, height - bottom);
+        fill.addColorStop(0, 'rgba(124,92,255,.28)');
+        fill.addColorStop(1, 'rgba(25,211,255,.02)');
+        ctx.fillStyle = fill;
+        ctx.beginPath();
+        points.forEach((point, index) => index ? ctx.lineTo(point.x, point.y) : ctx.moveTo(point.x, point.y));
+        ctx.lineTo(points[points.length - 1].x, top + graphH);
+        ctx.lineTo(points[0].x, top + graphH);
+        ctx.closePath();
+        ctx.fill();
+
+        points.forEach(point => {
+          ctx.fillStyle = getCSSColor('--bg-2');
+          ctx.beginPath();
+          ctx.arc(point.x, point.y, 6, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = accent2;
+          ctx.lineWidth = 3;
+          ctx.stroke();
+          ctx.fillStyle = text;
+          ctx.textAlign = 'center';
+          ctx.fillText(point.label, point.x, height - 12);
+          ctx.fillText(String(point.value), point.x, Math.max(14, point.y - 12));
+        });
+        ctx.textAlign = 'left';
+      }
+
+      function initGoals() {
+        $$('[data-goal]').forEach(input => {
+          const key = input.dataset.goal;
+          input.value = String(state.goals[key] ?? input.value);
+          const output = $(`#out${key.charAt(0).toUpperCase()}${key.slice(1)}`);
+          if (output) output.textContent = input.value;
+          input.addEventListener('input', () => {
+            state.goals[key] = Number(input.value);
+            if (output) output.textContent = input.value;
+            save();
+            updateKpis();
+            drawStrategyChart();
+          });
+        });
+        drawStrategyChart();
+        window.addEventListener('resize', () => requestAnimationFrame(drawStrategyChart), { passive: true });
+      }
+
+      function initTabsAndAccordion() {
+        $$('[data-tab-target]').forEach(button => {
+          button.addEventListener('click', () => {
+            const root = button.closest('[data-tabs]');
+            if (!root) return;
+            $$('[data-tab-target]', root).forEach(btn => btn.setAttribute('aria-selected', String(btn === button)));
+            $$('.tab-panel', root).forEach(panel => panel.classList.toggle('active', panel.id === button.dataset.tabTarget));
+          });
+        });
+
+        $$('.accordion-button').forEach(button => {
+          button.addEventListener('click', () => {
+            const panel = button.nextElementSibling;
+            const open = button.getAttribute('aria-expanded') === 'true';
+            button.setAttribute('aria-expanded', String(!open));
+            const icon = button.querySelector('span');
+            if (icon) icon.textContent = open ? '+' : '−';
+            if (panel) panel.hidden = open;
+          });
+        });
+      }
+
+      function initConsole() {
+        const log = $('#consoleLog');
+        const steps = {
+          deploy: ['build: html parsed', 'css: variables resolved', 'js: modules initialized', 'deploy: single-file package ready'],
+          audit: ['audit: checking localStorage fallback', 'audit: keyboard interactions ok', 'audit: reduced motion respected', 'audit: no external requests found'],
+          sync: ['sync: reading state', 'sync: preparing JSON snapshot', 'sync: queue normalized', 'sync: done locally']
+        };
+        function addLine(text) {
+          if (!log) return;
+          const time = new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+          log.textContent += `[${time}] ${text}\n`;
+          log.scrollTop = log.scrollHeight;
+        }
+        $$('[data-run]').forEach(button => button.addEventListener('click', () => {
+          const list = steps[button.dataset.run] || ['unknown command'];
+          list.forEach((line, index) => window.setTimeout(() => addLine(line), index * 160));
+        }));
+        $('#clearConsoleButton')?.addEventListener('click', () => { if (log) log.textContent = ''; });
+        addLine('console: připraveno');
+      }
+
+      function initChecklist() {
+        $$('[data-check]').forEach(input => {
+          const key = input.dataset.check;
+          input.checked = Boolean(state.checks[key]);
+          input.addEventListener('change', () => {
+            state.checks[key] = input.checked;
+            save();
+            toast(input.checked ? 'Položka checklistu hotová' : 'Položka checklistu vrácena', input.checked ? 'ok' : 'warn');
+          });
+        });
+      }
+
+      function renderContacts() {
+        const list = $('#queueList');
+        const count = $('#queueCount');
+        if (count) count.textContent = `${state.contacts.length} ${state.contacts.length === 1 ? 'položka' : state.contacts.length < 5 ? 'položky' : 'položek'}`;
+        if (!list) return;
+        list.innerHTML = '';
+        if (!state.contacts.length) {
+          const empty = document.createElement('div');
+          empty.className = 'empty-state';
+          empty.textContent = 'Fronta je prázdná.';
+          list.appendChild(empty);
+          return;
+        }
+        state.contacts.slice().reverse().forEach(item => {
+          const card = document.createElement('article');
+          card.className = 'queue-card';
+          card.innerHTML = `<strong>${escapeHTML(item.name)} · ${escapeHTML(item.type)}</strong><span>${escapeHTML(item.email)} · ${escapeHTML(item.created)}</span><p>${escapeHTML(item.message)}</p>`;
+          list.appendChild(card);
+        });
+      }
+
+      function initContacts() {
+        const form = $('#contactForm');
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const setError = (field, message) => {
+          const el = $(`[data-error-for="${field}"]`);
+          if (el) el.textContent = message;
+        };
+        form?.addEventListener('submit', event => {
+          event.preventDefault();
+          const data = new FormData(form);
+          const name = String(data.get('name') || '').trim();
+          const email = String(data.get('email') || '').trim();
+          const message = String(data.get('message') || '').trim();
+          const type = String(data.get('type') || 'Feedback');
+          let ok = true;
+          setError('name', ''); setError('email', ''); setError('message', '');
+          if (name.length < 2) { setError('name', 'Zadej alespoň 2 znaky.'); ok = false; }
+          if (!emailPattern.test(email)) { setError('email', 'Zadej platný e‑mail.'); ok = false; }
+          if (message.length < 8) { setError('message', 'Zpráva musí mít alespoň 8 znaků.'); ok = false; }
+          if (!ok) { toast('Formulář potřebuje opravit', 'danger'); return; }
+          state.contacts.push({ id: uid('msg'), name, email, type, message, created: new Date().toLocaleString('cs-CZ') });
+          save();
+          form.reset();
+          renderContacts();
+          toast('Zpráva uložena do lokální fronty');
+        });
+        $('#exportContactsButton')?.addEventListener('click', () => downloadJSON('fronta-zprav-command-center.json', state.contacts));
+        $('#clearContactsButton')?.addEventListener('click', () => {
+          state.contacts = [];
+          save();
+          renderContacts();
+          toast('Fronta smazána', 'warn');
+        });
+        renderContacts();
+      }
+
+      function initModal() {
+        const backdrop = $('#modalBackdrop');
+        const title = $('#modalTitle');
+        const body = $('#modalBody');
+        const content = {
+          intro: {
+            title: 'Co tahle stránka umí',
+            body: '<p>Je to robustní single-file demo: landing page, dashboard, kanban, poznámky, graf, tabs, akordeon, modal, formulářová validace, command palette, localStorage a canvas animace.</p><p>Neobsahuje externí skripty, fonty ani obrázky, takže se dá otevřít přímo ze souboru.</p>'
+          }
+        };
+        const close = () => { if (backdrop) backdrop.hidden = true; };
+        window.openInfoModal = key => {
+          const item = content[key] || { title: 'Detail', body: '<p>Žádný obsah.</p>' };
+          if (title) title.textContent = item.title;
+          if (body) body.innerHTML = item.body;
+          if (backdrop) backdrop.hidden = false;
+        };
+        $$('[data-open-modal]').forEach(button => button.addEventListener('click', () => window.openInfoModal(button.dataset.openModal)));
+        $$('[data-close-modal]').forEach(button => button.addEventListener('click', close));
+        backdrop?.addEventListener('click', event => { if (event.target === backdrop) close(); });
+        document.addEventListener('keydown', event => { if (event.key === 'Escape' && backdrop && !backdrop.hidden) close(); });
+      }
+
+      function initPalette() {
+        const palette = $('#commandPalette');
+        const search = $('#commandSearch');
+        const results = $('#commandResults');
+        let selected = 0;
+
+        const commands = [
+          { label: 'Přejít na dashboard', hint: 'Navigace', run: () => location.hash = '#dashboard' },
+          { label: 'Přejít na formulář', hint: 'Navigace', run: () => location.hash = '#kontakt' },
+          { label: 'Přepnout motiv', hint: 'Vzhled', run: () => $('#themeButton')?.click() },
+          { label: 'Přidat úkol', hint: 'Kanban', run: () => { location.hash = '#dashboard'; window.setTimeout(() => $('#taskTitle')?.focus(), 80); } },
+          { label: 'Exportovat celý stav', hint: 'Data', run: () => exportAllState() },
+          { label: 'Načíst demo úkoly', hint: 'Data', run: () => $('#seedTasksButton')?.click() },
+          { label: 'Otevřít info modal', hint: 'Nápověda', run: () => window.openInfoModal('intro') }
+        ];
+
+        function filteredCommands() {
+          const q = (search?.value || '').trim().toLowerCase();
+          if (!q) return commands;
+          return commands.filter(cmd => `${cmd.label} ${cmd.hint}`.toLowerCase().includes(q));
+        }
+
+        function render() {
+          if (!results) return;
+          const items = filteredCommands();
+          selected = Math.min(selected, Math.max(0, items.length - 1));
+          results.innerHTML = '';
+          if (!items.length) {
+            const empty = document.createElement('div');
+            empty.className = 'empty-state';
+            empty.textContent = 'Žádná akce nenalezena.';
+            results.appendChild(empty);
+            return;
+          }
+          items.forEach((cmd, index) => {
+            const button = document.createElement('button');
+            button.className = 'command-row';
+            button.type = 'button';
+            button.setAttribute('aria-selected', String(index === selected));
+            button.innerHTML = `<strong>${escapeHTML(cmd.label)}</strong><span>${escapeHTML(cmd.hint)}</span>`;
+            button.addEventListener('click', () => {
+              closePalette();
+              cmd.run();
+            });
+            results.appendChild(button);
+          });
+        }
+
+        function openPalette() {
+          if (!palette) return;
+          palette.hidden = false;
+          selected = 0;
+          search.value = '';
+          render();
+          window.setTimeout(() => search?.focus(), 30);
+        }
+
+        function closePalette() {
+          if (palette) palette.hidden = true;
+        }
+
+        function runSelected() {
+          const cmd = filteredCommands()[selected];
+          if (cmd) {
+            closePalette();
+            cmd.run();
+          }
+        }
+
+        $('#paletteButton')?.addEventListener('click', openPalette);
+        $$('[data-close-palette]').forEach(button => button.addEventListener('click', closePalette));
+        palette?.addEventListener('click', event => { if (event.target === palette) closePalette(); });
+        search?.addEventListener('input', () => { selected = 0; render(); });
+        search?.addEventListener('keydown', event => {
+          const items = filteredCommands();
+          if (event.key === 'ArrowDown') { event.preventDefault(); selected = Math.min(items.length - 1, selected + 1); render(); }
+          if (event.key === 'ArrowUp') { event.preventDefault(); selected = Math.max(0, selected - 1); render(); }
+          if (event.key === 'Enter') { event.preventDefault(); runSelected(); }
+        });
+        document.addEventListener('keydown', event => {
+          const tag = document.activeElement?.tagName?.toLowerCase();
+          const isTyping = ['input', 'textarea', 'select'].includes(tag || '');
+          if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+            event.preventDefault();
+            openPalette();
+          } else if (event.key === '/' && !isTyping && palette?.hidden) {
+            event.preventDefault();
+            openPalette();
+          } else if (event.key === 'Escape' && palette && !palette.hidden) {
+            closePalette();
+          }
+        });
+        window.openCommandPalette = openPalette;
+      }
+
+      function exportAllState() {
+        downloadJSON('command-center-state.json', {
+          exportedAt: new Date().toISOString(),
+          theme: document.documentElement.getAttribute('data-theme'),
+          tasks: state.tasks,
+          note: state.note,
+          goals: state.goals,
+          contacts: state.contacts,
+          checks: state.checks
+        });
+        toast('Snapshot stažen jako JSON');
+      }
+
+      function initExportsAndReset() {
+        $('#downloadStateButton')?.addEventListener('click', exportAllState);
+        $('#resetAllButton')?.addEventListener('click', () => {
+          if (!confirm('Opravdu resetovat demo data v tomto prohlížeči?')) return;
+          state.tasks = clone(defaultTasks);
+          state.note = clone(defaultNote);
+          state.goals = clone(defaultGoals);
+          state.contacts = [];
+          state.checks = {};
+          save();
+          $$('[data-goal]').forEach(input => {
+            const key = input.dataset.goal;
+            input.value = String(state.goals[key]);
+            const output = $(`#out${key.charAt(0).toUpperCase()}${key.slice(1)}`);
+            if (output) output.textContent = input.value;
+          });
+          const noteTitle = $('#noteTitle');
+          const noteBody = $('#noteBody');
+          if (noteTitle) noteTitle.value = state.note.title || '';
+          if (noteBody) noteBody.value = state.note.body || '';
+          $$('[data-check]').forEach(input => { input.checked = Boolean(state.checks[input.dataset.check]); });
+          renderNote();
+          drawStrategyChart();
+          renderTasks();
+          renderContacts();
+          toast('Demo data resetována', 'warn');
+        });
+      }
+
+      function initCanvas() {
+        const canvas = $('#spaceCanvas');
+        if (!canvas || !canvas.getContext || prefersReducedMotion) return;
+        const ctx = canvas.getContext('2d');
+        let width = 0;
+        let height = 0;
+        let points = [];
+        let raf = 0;
+
+        function resize() {
+          const dpr = Math.min(2, window.devicePixelRatio || 1);
+          width = window.innerWidth;
+          height = window.innerHeight;
+          canvas.width = Math.floor(width * dpr);
+          canvas.height = Math.floor(height * dpr);
+          canvas.style.width = `${width}px`;
+          canvas.style.height = `${height}px`;
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          const count = Math.max(28, Math.min(72, Math.floor(width / 24)));
+          points = Array.from({ length: count }, () => ({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: (Math.random() - .5) * .22,
+            vy: (Math.random() - .5) * .22,
+            r: Math.random() * 1.5 + .6
+          }));
+        }
+
+        function tick() {
+          ctx.clearRect(0, 0, width, height);
+          const accent = getCSSColor('--accent-2');
+          const line = getCSSColor('--line');
+          points.forEach(point => {
+            point.x += point.vx;
+            point.y += point.vy;
+            if (point.x < -20) point.x = width + 20;
+            if (point.x > width + 20) point.x = -20;
+            if (point.y < -20) point.y = height + 20;
+            if (point.y > height + 20) point.y = -20;
+          });
+          for (let i = 0; i < points.length; i++) {
+            const a = points[i];
+            ctx.fillStyle = accent;
+            ctx.globalAlpha = .42;
+            ctx.beginPath();
+            ctx.arc(a.x, a.y, a.r, 0, Math.PI * 2);
+            ctx.fill();
+            for (let j = i + 1; j < points.length; j++) {
+              const b = points[j];
+              const dx = a.x - b.x;
+              const dy = a.y - b.y;
+              const distance = Math.sqrt(dx * dx + dy * dy);
+              if (distance < 130) {
+                ctx.strokeStyle = line;
+                ctx.globalAlpha = (1 - distance / 130) * .55;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(a.x, a.y);
+                ctx.lineTo(b.x, b.y);
+                ctx.stroke();
+              }
+            }
+          }
+          ctx.globalAlpha = 1;
+          raf = requestAnimationFrame(tick);
+        }
+
+        resize();
+        tick();
+        window.addEventListener('resize', () => {
+          cancelAnimationFrame(raf);
+          resize();
+          tick();
+        }, { passive: true });
+      }
+
+      function boot() {
+        $('#year') && ($('#year').textContent = String(new Date().getFullYear()));
+        initTheme();
+        initHeader();
+        initCounters();
+        initTasks();
+        initNotes();
+        initGoals();
+        initTabsAndAccordion();
+        initConsole();
+        initChecklist();
+        initContacts();
+        initModal();
+        initPalette();
+        initExportsAndReset();
+        initCanvas();
+        toast('Web načtený a připravený');
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', boot);
+      } else {
+        boot();
+      }
+    })();
   </script>
 </body>
 </html>
